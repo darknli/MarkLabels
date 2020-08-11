@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QDesktopWidget, QToolTip, QLabel, QShortcut,
-    QWidget, QPushButton
+    QWidget, QPushButton, QSlider, QScrollArea, QVBoxLayout, QFrame
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QKeySequence, QPalette
@@ -32,16 +32,18 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(self.tr("n")), self, self.next)
 
         self.sub_window = QWidget(self)
-        self.sub_window.resize(1000, 720)
+        self.sub_window.resize(1140, 640)
+        self.sub_window.setWindowFlags(Qt.FramelessWindowHint)
         self.sub_window.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
         palette.setColor(QPalette.Window, Qt.black)
         self.sub_window.setPalette(palette)
-        move2centertop(self.sub_window)
+        self.sub_window.move(0, 0)
 
         self.save_btn = QPushButton("保存", self)
         self.save_btn.resize(100, 50)
-        self.save_btn.move(1100, 100)
+        self.save_btn.move(1160, 20)
+        self.save_btn.clicked.connect(self._clicked_save_btn)
 
     def read_dir_images(self, dirname="./"):
         from glob import glob
@@ -78,6 +80,8 @@ class MainWindow(QMainWindow):
             return
         if hasattr(self, "image_label") and self.image_label is not None:
             sip.delete(self.image_label)
+            sip.delete(self.scroll)
+            sip.delete(self.vbox)
         self.image_label = QLabel(self.sub_window)
 
         file = self.images[self.idx]
@@ -86,6 +90,16 @@ class MainWindow(QMainWindow):
         self.image_label.show()
         self.image_label.resize(image.size())
         self.image_label.move(0, 0)
+        self.image_label.setFrameShape(QFrame.NoFrame)
+        # 加滚动条
+        self.scroll = QScrollArea()
+        self.scroll.setFrameShape(QFrame.NoFrame)
+        self.scroll.setWidget(self.image_label)
+        self.vbox = QVBoxLayout()
+        self.vbox.setContentsMargins(0, 0, 0, 0)
+        self.vbox.addWidget(self.scroll)
+        self.sub_window.setLayout(self.vbox)
+
         self.status = self.statusBar()
         self.status.showMessage("{}, {}x{}".format(file, image.width(), image.height()))
 
@@ -119,6 +133,9 @@ class MainWindow(QMainWindow):
                 f.write("\n")
         if del_pts:
             del self.pts
+
+    def _clicked_save_btn(self):
+        self._save_keypoints(self.idx, False)
 
     def before(self):
         self.idx -= 1
