@@ -121,12 +121,11 @@ class MainWindow(QMainWindow):
         anno = join("{}/{}.pts".format(self.save_dir, basename(self.images[idx]).rsplit(".")[0]))
         with open(anno, "w") as f:
             f.write("{}\n".format(self.images[idx]))
-            f.write("%d\n" % len(self.pts))
-            for pts_controller in self.pts:
-                for pt in pts_controller:
-                    f.write("%.1f " % pt.geometry().x())
-                    f.write("%.1f " % pt.geometry().y())
-                f.write("\n")
+            results = self.kp_cluster.get_points_str()
+            f.write("%d\n" % len(results))
+            for result in results:
+                f.write("%s\n" % result)
+
         if del_pts:
             del self.pts
 

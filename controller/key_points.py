@@ -62,6 +62,9 @@ class Keypoint(QLabel):
         self.grabKeyboard()
         self.upper_controller.notify_other_points_normal(self.idx_face, self.idx_points)
 
+    def set_visible(self):
+        self.visible = not self.visible
+
 class KeypointsCluster:
     def __init__(self, pts_list, prarent):
         self.pts = []
@@ -91,20 +94,32 @@ class KeypointsCluster:
                 if is_face and i != idx_points:
                     self.pts[0][i].set_important_point(False)
 
+    def get_points_str(self):
+        points_str_list = []
+        for pts_controller in self.pts:
+            points_str = " ".join(
+                ["%.1f %.1f %d"%(pt.geometry().x(), pt.geometry().y(), pt.visible) for pt in pts_controller])
+            points_str_list.append(points_str)
+        return points_str_list
+
 class KeyPointTable:
     def __init__(self, kp_cluster, parent):
         rows = len(kp_cluster.pts[0])
         self.kp_tabel = QTableWidget(rows, 4, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见"])
         for i, kp in enumerate(kp_cluster.pts[0]):
-            btn = KeyPointButton(i, str(i))
-            btn.clicked.connect(partial(self._transmit_signal, kp))
+            btn = QPushButton(str(i))
+            btn.clicked.connect(partial(self._highlight, kp))
+            btn.setText(btn.text())
+            visible_btn = QPushButton("Yes" if kp.visible else "No")
+            visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn))
+
             self.kp_tabel.setCellWidget(i, 0, btn)
             # self.kp_tabel.setItem(i, 0, QTableWidgetItem(str(i)))
             self.kp_tabel.setItem(i, 1, QTableWidgetItem(str(kp.geometry().x())))
             self.kp_tabel.setItem(i, 2, QTableWidgetItem(str(kp.geometry().y())))
-            self.kp_tabel.setItem(i, 3, QTableWidgetItem("Yes" if kp.visible else "No"))
-        self.kp_tabel.resize(180, 550)
+            self.kp_tabel.setCellWidget(i, 3, visible_btn)
+        self.kp_tabel.resize(210, 550)
         self.kp_tabel.show()
         self.kp_tabel.verticalHeader().hide()
         # self.kp_tabel.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
@@ -116,14 +131,12 @@ class KeyPointTable:
     def move(self, x, y):
         self.kp_tabel.move(x, y)
 
-    def _transmit_signal(self, kp):
+    def _highlight(self, kp):
         kp.mouseDoubleClickEvent(None)
 
-class KeyPointButton(QPushButton):
-    def __init__(self, idx, *__args):
-        super().__init__(*__args)
-        self.idx = idx
-    #     self.clicked.connect(self._transmit_signal)
-    #
-    # def _transmit_signal(self):
-    #     print(self.idx)
+    def _set_visible(self, kp, btn):
+        print("触发")
+        btn.setText("Yes" if btn.text() == "No" else "No")
+        btn.repaint()
+        print(btn.text())
+        kp.set_visible()
