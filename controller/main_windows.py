@@ -82,6 +82,10 @@ class MainWindow(QMainWindow):
             sip.delete(self.image_label)
             sip.delete(self.scroll)
             sip.delete(self.vbox)
+            del self.kp_cluster
+            del self.kp_tabel
+            # sip.delete(self.kp_cluster)
+            # sip.delete(self.kp_tabel)
         self.image_label = QLabel(self.sub_window)
 
         file = self.images[self.idx]
@@ -125,9 +129,6 @@ class MainWindow(QMainWindow):
             f.write("%d\n" % len(results))
             for result in results:
                 f.write("%s\n" % result)
-
-        if del_pts:
-            del self.pts
 
     def _clicked_save_btn(self):
         self._save_keypoints(self.idx, False)
