@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QKeySequence, QPalette
 import numpy as np
-from controller.key_points import Keypoint, KeyPointTable
+from controller.key_points import Keypoint, KeyPointTable, KeypointsCluster
 from os.path import join, basename
 import sip
 
@@ -105,17 +105,10 @@ class MainWindow(QMainWindow):
 
         image_name = basename(file)
         pts_list = self.image2pts[image_name]
-        self.pts = []
-        for pts in pts_list:
-            pts_controller = []
-            for x, y in pts:
-                kp = Keypoint(self.image_label)
-                pts_controller.append(kp)
-                kp.move(x, y)
-                kp.show()
-            self.pts.append(pts_controller)
 
-        self.kp_tabel = KeyPointTable(self.pts, self)
+        self.kp_cluster = KeypointsCluster(pts_list, self.image_label)
+
+        self.kp_tabel = KeyPointTable(self.kp_cluster, self)
         self.kp_tabel.move(1020, 80)
 
     def next(self):
@@ -151,8 +144,11 @@ class MainWindow(QMainWindow):
         if not path.exists(dir):
             makedirs(dir)
 
-    def set_important_point(self, i):
-        print("按了", i)
-        self.pts[0][i].set_important_point()
-        self.pts[0][i].mouseDoubleClickEvent(None)
-        QApplication.processEvents()
+    def set_important_point(self, idx):
+        print(idx)
+        for i, pt in enumerate(self.pts[0]):
+            if i == idx:
+                print("找到了%d" % i)
+                self.pts[0][i].mouseDoubleClickEvent(None)
+            else:
+                self.pts[0][i].set_important_point(False)
