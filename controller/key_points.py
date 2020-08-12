@@ -20,7 +20,7 @@ class Keypoint(QLabel):
         palette.setColor(QPalette.Window, Qt.red)
         self.setPalette(palette)
         self.setAlignment(Qt.AlignCenter)
-        QApplication.processEvents()
+        self.repaint()
         print("设置完毕")
 
     def set_normal_point(self):
