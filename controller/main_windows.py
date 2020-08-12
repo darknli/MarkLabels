@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QDesktopWidget, QToolTip, QLabel, QShortcut,
-    QWidget, QPushButton, QSlider, QScrollArea, QVBoxLayout, QFrame
+    QWidget, QPushButton, QApplication, QScrollArea, QVBoxLayout, QFrame
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QKeySequence, QPalette
 import numpy as np
-from controller.key_points import Keypoint
+from controller.key_points import Keypoint, KeyPointTable
 from os.path import join, basename
 import sip
 
@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(self.tr("n")), self, self.next)
 
         self.sub_window = QWidget(self)
-        self.sub_window.resize(1140, 640)
+        self.sub_window.resize(1000, 640)
         self.sub_window.setWindowFlags(Qt.FramelessWindowHint)
         self.sub_window.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
 
         self.save_btn = QPushButton("保存", self)
         self.save_btn.resize(100, 50)
-        self.save_btn.move(1160, 20)
+        self.save_btn.move(1100, 20)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
     def read_dir_images(self, dirname="./"):
@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
         self.grabKeyboard()
 
     def read_labels(self, filename):
-        self.image2label = {}
+        self.image2pts = {}
         with open(filename) as f:
             lines = f.readlines()
             idx = 0
@@ -72,7 +72,7 @@ class MainWindow(QMainWindow):
                     pt = np.array([float(pt) for pt in lines[idx].strip().split(" ")]).reshape(-1, 2)
                     pts.append(pt)
                     idx += 1
-                self.image2label[image_path] = pts
+                self.image2pts[image_path] = pts
 
     def run(self):
         if len(self.images) == 0:
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         self.status.showMessage("{}, {}x{}".format(file, image.width(), image.height()))
 
         image_name = basename(file)
-        pts_list = self.image2label[image_name]
+        pts_list = self.image2pts[image_name]
         self.pts = []
         for pts in pts_list:
             pts_controller = []
@@ -114,6 +114,9 @@ class MainWindow(QMainWindow):
                 kp.move(x, y)
                 kp.show()
             self.pts.append(pts_controller)
+
+        self.kp_tabel = KeyPointTable(self.pts, self)
+        self.kp_tabel.move(1020, 80)
 
     def next(self):
         self._save_keypoints(self.idx, True)
@@ -148,3 +151,8 @@ class MainWindow(QMainWindow):
         if not path.exists(dir):
             makedirs(dir)
 
+    def set_important_point(self, i):
+        print("按了", i)
+        self.pts[0][i].set_important_point()
+        self.pts[0][i].mouseDoubleClickEvent(None)
+        QApplication.processEvents()
