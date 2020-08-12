@@ -18,6 +18,7 @@ class Keypoint(QLabel):
         self.upper_controller = upper_controller
         self.idx_face = idx_face
         self.idx_points = idx_points
+        self.parent = parent
 
     def set_important_point(self, is_highlight=False):
         palette = QPalette()  # 创建调色板类实例
@@ -40,21 +41,26 @@ class Keypoint(QLabel):
 
         cor = QPoint(x, y)
         self.move(self.mapToParent(cor))  # 需要maptoparent一下才可以的,否则只是相对位置。
+        self.after_move_action(self.move_controller)
 
     def keyPressEvent(self, event):
         # 如果按下xxx则xxx
         if event.key() == Qt.Key_Left:
             x, y = self.geometry().x(), self.geometry().y()
             self.move(x - 1, y)
+            self.after_move_action(self.move_controller)
         elif (event.key() == Qt.Key_Right):
             x, y = self.geometry().x(), self.geometry().y()
             self.move(x + 1, y)
+            self.after_move_action(self.move_controller)
         elif (event.key() == Qt.Key_Up):
             x, y = self.geometry().x(), self.geometry().y()
             self.move(x, y - 1)
+            self.after_move_action(self.move_controller)
         elif (event.key() == Qt.Key_Down):
             x, y = self.geometry().x(), self.geometry().y()
             self.move(x, y + 1)
+            self.after_move_action(self.move_controller)
         elif (event.key() == Qt.Key_V):
             self.visible = not self.visible
 
@@ -66,6 +72,13 @@ class Keypoint(QLabel):
     def set_visible(self):
         self.visible = not self.visible
 
+    def bind_point_move_controller(self, move_controller):
+        self.move_controller = move_controller
+
+    # 当该点被移动了，则对别的控件采取某些行动
+    def after_move_action(self, controller):
+        controller.after_move_action(self.idx_face, self.idx_points)
+
 class KeypointsCluster:
     def __init__(self, pts_list, prarent):
         self.pts = []
@@ -73,6 +86,7 @@ class KeypointsCluster:
             controller = []
             for idx_point, (x, y) in enumerate(pts):
                 kp = Keypoint(prarent, self, idx_face, idx_point)
+                kp.bind_point_move_controller(self)
                 controller.append(kp)
                 kp.move(x, y)
                 kp.show()
@@ -127,12 +141,20 @@ class KeypointsCluster:
         else:
             pt.move(pt.geometry().x(), v)
 
+    # 捆绑控件，当有点移动时，该控件也会跟着起行动
+    def bind_point_move_controller(self, move_controller):
+        self.move_controller = move_controller
+
+    def after_move_action(self, idx_face, idx_point):
+        self.move_controller.after_move_action(idx_face, idx_point)
+
 class KeyPointTable:
     def __init__(self, kp_cluster, parent):
         rows = len(kp_cluster.pts[0])
         self.kp_tabel = QTableWidget(rows, 4, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见"])
         self.kp_cluster = kp_cluster
+        self.kp_cluster.bind_point_move_controller(self)
         for i, kp in enumerate(kp_cluster.pts[0]):
             btn = QPushButton(str(i))
             btn.clicked.connect(partial(self._highlight, kp))
@@ -182,3 +204,8 @@ class KeyPointTable:
     def _set_edit(self):
         for row in range(self.kp_tabel.rowCount()):
             self.kp_tabel.item(row, 1).setFlags(Qt.ItemIsEnabled|Qt.ItemIsEditable)
+
+    def after_move_action(self, idx_face, idx_point):
+        pt_geometry = self.kp_cluster.pts[idx_face][idx_point].geometry()
+        self.kp_tabel.item(idx_point, 1).setText("%d" % (pt_geometry.x()))
+        self.kp_tabel.item(idx_point, 2).setText("%d" % (pt_geometry.y()))

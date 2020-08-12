@@ -84,8 +84,6 @@ class MainWindow(QMainWindow):
             sip.delete(self.vbox)
             del self.kp_cluster
             del self.kp_tabel
-            # sip.delete(self.kp_cluster)
-            # sip.delete(self.kp_tabel)
         self.image_label = QLabel(self.sub_window)
 
         file = self.images[self.idx]
