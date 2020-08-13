@@ -85,8 +85,8 @@ class MainWindow(QMainWindow):
             # sip.delete(self.vbox)
             del self.kp_cluster
             del self.kp_tabel
-        file = self.images[self.idx]
-        self.image_label = ImageController(file, self.sub_window)
+        self.file = self.images[self.idx]
+        self.image_label = ImageController(self.file, self.sub_window)
         self.image_label.show()
         self.image_label.move(0, 0)
         self.image_label.setFrameShape(QFrame.NoFrame)
@@ -99,13 +99,16 @@ class MainWindow(QMainWindow):
         # self.vbox.addWidget(self.scroll)
         # self.sub_window.setLayout(self.vbox)
         #
-        # self.status = self.statusBar()
-        # self.status.showMessage("{}, {}x{}".format(file, image.width(), image.height()))
+        self.status = self.statusBar()
+        self.status.showMessage("{}, {}x{}, ratio={}".format(
+            self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
 
-        image_name = basename(file)
+        image_name = basename(self.file)
         pts_list = self.image2pts[image_name]
 
         self.kp_cluster = KeypointsCluster(pts_list, self.image_label)
+        self.image_label.bind_keypoints_move(self.kp_cluster.scale_loc)
+        self.image_label.bind_show(self.update_message_status)
 
         self.kp_tabel = KeyPointTable(self.kp_cluster, self)
         self.kp_tabel.move(1020, 80)
@@ -146,3 +149,7 @@ class MainWindow(QMainWindow):
                 self.pts[0][i].mouseDoubleClickEvent(None)
             else:
                 self.pts[0][i].set_important_point(False)
+
+    def update_message_status(self):
+        self.status.showMessage("{}, {}x{}, ratio={:.1f}".format(
+            self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))

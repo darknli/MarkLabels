@@ -4,6 +4,9 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QKeySequence, QPixmap, QPainter
 from functools import partial
 
+MAX_SCALE = 10
+MIN_SCALE = 1
+
 
 class ImageController(QLabel):
     def __init__(self, image_path, parent):
@@ -14,7 +17,12 @@ class ImageController(QLabel):
         self.point = QPoint(0, 0)
         self.left_point = QPoint(0, 0)
         self.right_point = QPoint(self.img.width(), self.img.height())
+        self.global_shift = QPoint(0, 0)
         self.ratio = 1.0
+        self.kp_move = None
+
+    def bind_show(self, update_show_status):
+        self.update_show_status = update_show_status
 
     def paintEvent(self, e):
         painter = QPainter()
@@ -32,23 +40,21 @@ class ImageController(QLabel):
     def mouseMoveEvent(self, e):  # 重写移动事件
         if self.left_click:
             move_distance = e.pos() - self._startPos
+            move_distance += self.global_shift * self.ratio
             delta_x, delta_y = move_distance.x(), move_distance.y()
-            print("x", (delta_x, -self.left_point.x()), self.width() - self.right_point.x())
-            print("y", (delta_y, -self.left_point.y()), self.height() - self.right_point.y())
-            delta_x = max(min(delta_x, -self.left_point.x()), self.width() - self.right_point.x())
-            delta_y = max(min(delta_y, -self.left_point.y()), self.height() - self.right_point.y())
+            delta_x = max(min(delta_x, 0), self.width() - self.img.width()*self.ratio)
+            delta_y = max(min(delta_y, 0), self.height() - self.img.height()*self.ratio)
             move_distance.setX(delta_x)
             move_distance.setY(delta_y)
-            move_distance = move_distance
-            self.point = self.point + move_distance
-            self.left_point = self.left_point + move_distance
+            self.global_shift = move_distance / self.ratio
+            self.point = QPoint(0, 0) + move_distance
             self.right_point = self.right_point + move_distance
             self._startPos = e.pos()
+            if self.kp_move is not None:
+                self.kp_move(self.ratio, self.global_shift)
             self.repaint()
-            print()
 
     def mousePressEvent(self, e):
-        # print(e.pos())
         if e.button() == Qt.LeftButton:
             self.left_click = True
             self._startPos = e.pos()
@@ -56,26 +62,19 @@ class ImageController(QLabel):
     def mouseReleaseEvent(self, e):
         if e.button() == Qt.LeftButton:
             self.left_click = False
-        elif e.button() == Qt.RightButton:
-            self.point = QPoint(0, 0)
-            self.scaled_img = self.img.scaled(self.size())
-            self.repaint()
 
     def wheelEvent(self, e):
         if e.angleDelta().y() > 0:
-            self.ratio = min(self.ratio + 0.1, 2.5)
+            self.ratio = min(self.ratio + 0.1, MAX_SCALE)
         elif e.angleDelta().y() < 0:
-            self.ratio = max(self.ratio - 0.1, 1)
-        print("ratio {}".format(self.ratio))
-        # 放大
-        if self.ratio == 1:
-            self.scaled_img = self.img.copy()
-        else:
-            self.scaled_img = self.img.scaled(int(self.img.width()*self.ratio), int(self.img.height()*self.ratio))
-        self.point = QPoint(0, 0)
-        self.left_point = QPoint(0, 0)
-        self.right_point = QPoint(self.scaled_img.width(), self.scaled_img.height())
+            self.ratio = max(self.ratio - 0.1, MIN_SCALE)
+        self.scaled_img = self.img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
+        self.point = QPoint(0, 0) + self.global_shift * self.ratio
+        self.right_point = QPoint(self.scaled_img.height(), self.scaled_img.width())
+        if self.kp_move is not None:
+            self.kp_move(self.ratio, self.global_shift)
+        self.update_show_status()
         self.repaint()
 
-    def bind_keypoints_cluster(self, cluster):
-        self.cluster = cluster
+    def bind_keypoints_move(self, rescale_shift):
+        self.kp_move = rescale_shift
