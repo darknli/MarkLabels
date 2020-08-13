@@ -5,7 +5,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QKeySequence, QPalette
 import numpy as np
-from controller.key_points import Keypoint, KeyPointTable, KeypointsCluster
+from controller.key_points import KeyPointTable, KeypointsCluster
+from controller.picture import ImageController
 from os.path import join, basename
 import sip
 
@@ -80,30 +81,26 @@ class MainWindow(QMainWindow):
             return
         if hasattr(self, "image_label") and self.image_label is not None:
             sip.delete(self.image_label)
-            sip.delete(self.scroll)
-            sip.delete(self.vbox)
+            # sip.delete(self.scroll)
+            # sip.delete(self.vbox)
             del self.kp_cluster
             del self.kp_tabel
-        self.image_label = QLabel(self.sub_window)
-
         file = self.images[self.idx]
-        image = QPixmap(file)
-        self.image_label.setPixmap(image)
+        self.image_label = ImageController(file, self.sub_window)
         self.image_label.show()
-        self.image_label.resize(image.size())
         self.image_label.move(0, 0)
         self.image_label.setFrameShape(QFrame.NoFrame)
         # 加滚动条
-        self.scroll = QScrollArea()
-        self.scroll.setFrameShape(QFrame.NoFrame)
-        self.scroll.setWidget(self.image_label)
-        self.vbox = QVBoxLayout()
-        self.vbox.setContentsMargins(0, 0, 0, 0)
-        self.vbox.addWidget(self.scroll)
-        self.sub_window.setLayout(self.vbox)
-
-        self.status = self.statusBar()
-        self.status.showMessage("{}, {}x{}".format(file, image.width(), image.height()))
+        # self.scroll = QScrollArea()
+        # self.scroll.setFrameShape(QFrame.NoFrame)
+        # self.scroll.setWidget(self.image_label)
+        # self.vbox = QVBoxLayout()
+        # self.vbox.setContentsMargins(0, 0, 0, 0)
+        # self.vbox.addWidget(self.scroll)
+        # self.sub_window.setLayout(self.vbox)
+        #
+        # self.status = self.statusBar()
+        # self.status.showMessage("{}, {}x{}".format(file, image.width(), image.height()))
 
         image_name = basename(file)
         pts_list = self.image2pts[image_name]
@@ -146,7 +143,6 @@ class MainWindow(QMainWindow):
         print(idx)
         for i, pt in enumerate(self.pts[0]):
             if i == idx:
-                print("找到了%d" % i)
                 self.pts[0][i].mouseDoubleClickEvent(None)
             else:
                 self.pts[0][i].set_important_point(False)

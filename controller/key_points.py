@@ -5,8 +5,10 @@ from PyQt5.QtGui import QPalette, QKeySequence
 from functools import partial
 
 class Keypoint(QLabel):
-    def __init__(self, parent, upper_controller, idx_face, idx_points, visible=True):
+    def __init__(self, parent, loc, upper_controller, idx_face, idx_points, visible=True):
         super().__init__(parent)
+        self.precison_x = loc[0]
+        self.precison_y = loc[1]
         self.iniDragCor = [0, 0]
         self.resize(5, 5)
         self.setAutoFillBackground(True)
@@ -19,6 +21,7 @@ class Keypoint(QLabel):
         self.idx_face = idx_face
         self.idx_points = idx_points
         self.parent = parent
+        self.move(*loc)
 
     def set_important_point(self, is_highlight=False):
         palette = QPalette()  # 创建调色板类实例
@@ -85,10 +88,9 @@ class KeypointsCluster:
         for idx_face, pts in enumerate(pts_list):
             controller = []
             for idx_point, (x, y) in enumerate(pts):
-                kp = Keypoint(prarent, self, idx_face, idx_point)
+                kp = Keypoint(prarent, (x, y), self, idx_face, idx_point)
                 kp.bind_point_move_controller(self)
                 controller.append(kp)
-                kp.move(x, y)
                 kp.show()
             self.pts.append(controller)
         self.highlight_idx_face = None
@@ -140,6 +142,9 @@ class KeypointsCluster:
             pt.move(v, pt.geometry().y())
         else:
             pt.move(pt.geometry().x(), v)
+
+    def scale_loc(self):
+        pass
 
     # 捆绑控件，当有点移动时，该控件也会跟着起行动
     def bind_point_move_controller(self, move_controller):
