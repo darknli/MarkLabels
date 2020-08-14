@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QWidget, QPushButton, QApplication, QScrollArea, QVBoxLayout, QFrame
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QPixmap, QKeySequence, QPalette
+from PyQt5.QtGui import QIcon, QKeySequence, QPalette, QFont
 import numpy as np
 from controller.key_points import KeyPointTable, KeypointsCluster
 from controller.picture import ImageController
@@ -42,8 +42,12 @@ class MainWindow(QMainWindow):
         self.sub_window.move(0, 0)
 
         self.save_btn = QPushButton("保存", self)
-        self.save_btn.resize(100, 50)
-        self.save_btn.move(1100, 20)
+        font = QFont()
+        font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
+        font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
+        self.save_btn.setFont(font)
+        self.save_btn.resize(60, 40)
+        self.save_btn.move(1015, 0)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
     def read_dir_images(self, dirname="./"):
@@ -114,7 +118,7 @@ class MainWindow(QMainWindow):
         self.kp_tabel.move(1020, 80)
 
     def next(self):
-        self._save_keypoints(self.idx, True)
+        # self._save_keypoints(self.idx, True)
         self.idx += 1
         self.idx = min(len(self.images) - 1, self.idx)
         self.run()
@@ -130,6 +134,9 @@ class MainWindow(QMainWindow):
 
     def _clicked_save_btn(self):
         self._save_keypoints(self.idx, False)
+
+    def _clicked_withdraw_btn(self):
+        self.kp_tabel.reset_point()
 
     def before(self):
         self.idx -= 1

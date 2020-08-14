@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, \
     QTableWidgetItem, QApplication, QHeaderView, QAbstractItemView
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QPalette, QKeySequence
+from PyQt5.QtGui import QPalette, QFont
 from functools import partial
 
 class Keypoint(QLabel):
@@ -179,40 +179,55 @@ class KeypointsCluster:
 
 class KeyPointTable:
     def __init__(self, kp_cluster, parent):
+        font = QFont()
+        font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
+        font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         rows = len(kp_cluster.pts[0])
-        self.kp_tabel = QTableWidget(rows, 4, parent)
-        self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见"])
+        self.kp_tabel = QTableWidget(rows, 5, parent)
+        self.kp_tabel.setFont(font)
+        self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)
+        self.backup_kp = []
         for i, kp in enumerate(kp_cluster.pts[0]):
-            btn = QPushButton(str(i))
-            btn.clicked.connect(partial(self._highlight, kp))
+            self.backup_kp.append(("%1.f" % kp.precision_x, "%.1f" % kp.precision_y))
             visible_btn = QPushButton("Yes" if kp.visible else "No")
             visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn))
-
-            self.kp_tabel.setCellWidget(i, 0, btn)
-
+            # visible_btn.resize(3, 3)
+            visible_btn.setStyleSheet("border:none")
+            visible_btn.setFont(font)
+            visible_btn.setFlat(True)
+            # self.kp_tabel.setCellWidget(i, 0, btn)
+            self.kp_tabel.setItem(i, 0, QTableWidgetItem(str(i)))
             self.kp_tabel.setItem(i, 1, QTableWidgetItem("%.1f" % kp.precision_x))
             self.kp_tabel.setItem(i, 2, QTableWidgetItem("%.1f" % kp.precision_y))
             self.kp_tabel.setCellWidget(i, 3, visible_btn)
+            self.kp_tabel.setItem(i, 4, QTableWidgetItem("No"))
         self.kp_tabel.cellChanged.connect(self.cell_change)
-        self.kp_tabel.cellClicked.connect(self.release_keyboard)
-        self.kp_tabel.resize(236, 550)
+        self.kp_tabel.cellClicked.connect(self.click_cell)
+        self.kp_tabel.resize(182, 550)
         self.kp_tabel.show()
         self.kp_tabel.verticalHeader().hide()
-        self.kp_tabel.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.kp_tabel.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.kp_tabel.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.kp_tabel.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        for i in range(self.kp_tabel.columnCount()):
+            self.kp_tabel.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
 
-    def release_keyboard(self, row, col):
+    def click_cell(self, row, col):
+        print("click!!!!", row, col)
+        self._highlight(self.kp_cluster.pts[0][row])
         if col == 1 or col == 2:
             self.kp_cluster.release_keyboard()
+        elif col == 4:
+            if self.kp_tabel.item(row, col).text() == "Yes":
+                self.kp_tabel.item(row, 1).setText(self.backup_kp[row][0])
+                self.kp_tabel.item(row, 2).setText(self.backup_kp[row][1])
+                self.kp_tabel.item(row, 4).setText("No")
 
     def cell_change(self, row, col):
         if col != 1 and col != 2:
             return
         value = self.kp_tabel.item(row, col).text()
+        if value != self.backup_kp[row][col == 2]:
+            self.kp_tabel.item(row, 4).setText("Yes")
         self.kp_cluster.change_location(0, row, col == 1, float(value))
 
     def move(self, x, y):
@@ -220,20 +235,11 @@ class KeyPointTable:
 
     def _highlight(self, kp):
         kp.mouseDoubleClickEvent(None)
-        # self.kp_tabel.grabKeyboard()
-        # self._set_edit()
-        # self.kp_tabel.setEditTriggers(QAbstractItemView.AllEditTriggers)
 
     def _set_visible(self, kp, btn):
         btn.setText("Yes" if btn.text() == "No" else "No")
         btn.repaint()
         kp.set_visible()
-        # self._set_edit()
-        # self.kp_tabel.setEditTriggers(QAbstractItemView.AllEditTriggers)
-
-    def _set_edit(self):
-        for row in range(self.kp_tabel.rowCount()):
-            self.kp_tabel.item(row, 1).setFlags(Qt.ItemIsEnabled|Qt.ItemIsEditable)
 
     def after_move_action(self, idx_face, idx_point):
         pt = self.kp_cluster.pts[idx_face][idx_point]
