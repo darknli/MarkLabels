@@ -6,7 +6,7 @@ from functools import partial
 from controller.page_table import BulkIndexTabelWidget
 
 visiable_color = Qt.green
-disvisiable_color = Qt.darkGreen
+disvisiable_color = Qt.blue
 seleted_color = Qt.red
 
 
