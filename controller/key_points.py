@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, \
-    QTableWidgetItem, QHeaderView
+from PyQt5.QtWidgets import QLabel, QPushButton, \
+    QTableWidgetItem
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QFont
 from functools import partial

@@ -7,6 +7,7 @@ from PyQt5.QtGui import QIcon, QKeySequence, QPalette, QFont
 import numpy as np
 from controller.key_points import KeyPointTable, KeypointsCluster
 from controller.picture import ImageController
+from controller.data_labels import Labels
 from os.path import join, basename
 import sip
 
@@ -46,7 +47,7 @@ class MainWindow(QMainWindow):
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         self.save_btn.setFont(font)
-        self.save_btn.resize(60, 40)
+        self.save_btn.resize(50, 30)
         self.save_btn.move(1015, 0)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
@@ -85,6 +86,7 @@ class MainWindow(QMainWindow):
             return
         if hasattr(self, "image_label") and self.image_label is not None:
             sip.delete(self.image_label)
+            sip.delete(self.face_label)
             # sip.delete(self.scroll)
             # sip.delete(self.vbox)
             del self.kp_cluster
@@ -116,6 +118,9 @@ class MainWindow(QMainWindow):
 
         self.kp_tabel = KeyPointTable(self.kp_cluster, self)
         self.kp_tabel.move(1020, 100)
+
+        self.face_label = Labels(self)
+        self.face_label.move(1020, 30)
 
     def next(self):
         # self._save_keypoints(self.idx, True)
