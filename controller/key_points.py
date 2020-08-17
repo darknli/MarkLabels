@@ -13,6 +13,7 @@ seleted_color = Qt.red
 class Keypoint(QLabel):
     def __init__(self, parent, loc, upper_controller, idx_face, idx_points, visible=True):
         super().__init__(parent)
+        self.backup_loc = loc
         self.precision_x = loc[0]
         self.precision_y = loc[1]
         self.iniDragCor = [0, 0]
@@ -73,20 +74,23 @@ class Keypoint(QLabel):
             x, y = self.geometry().x(), self.geometry().y()
             self.my_move(x - 1, y)
             self.after_move_action(self.move_controller)
-        elif (event.key() == Qt.Key_Right):
+        elif event.key() == Qt.Key_Right:
             x, y = self.geometry().x(), self.geometry().y()
             self.my_move(x + 1, y)
             self.after_move_action(self.move_controller)
-        elif (event.key() == Qt.Key_Up):
+        elif event.key() == Qt.Key_Up:
             x, y = self.geometry().x(), self.geometry().y()
             self.my_move(x, y - 1)
             self.after_move_action(self.move_controller)
-        elif (event.key() == Qt.Key_Down):
+        elif event.key() == Qt.Key_Down:
             x, y = self.geometry().x(), self.geometry().y()
             self.my_move(x, y + 1)
             self.after_move_action(self.move_controller)
-        elif (event.key() == Qt.Key_V):
+        elif event.key() == Qt.Key_V:
             self.visible = not self.visible
+        elif event.key() == Qt.Key_Escape:
+            self.relative_move(*self.backup_loc)
+            self.after_move_action(self.move_controller)
 
     def mouseDoubleClickEvent(self, event):
         self.set_important_point(True)
@@ -205,13 +209,13 @@ class KeyPointTable:
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         rows = len(kp_cluster.pts[0])
-        self.kp_tabel = BulkIndexTabelWidget(rows, 5, 17, parent)
+        self.kp_tabel = BulkIndexTabelWidget(rows, 5, 19, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)
         self.backup_kp = []
         for i, kp in enumerate(kp_cluster.pts[0]):
-            self.backup_kp.append(("%1.f" % kp.precision_x, "%.1f" % kp.precision_y))
+            self.backup_kp.append(("%.1f" % kp.precision_x, "%.1f" % kp.precision_y))
             visible_btn = QPushButton("Yes" if kp.visible else "No")
             visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn))
             # visible_btn.resize(3, 3)
@@ -228,7 +232,7 @@ class KeyPointTable:
         self.kp_tabel.setFont(font)
         self.kp_tabel.cellChangedconnect(self.cell_change)
         self.kp_tabel.cellClickedconnect(self.click_cell)
-        self.kp_tabel.resize(300, 540)
+        self.kp_tabel.resize(300, 650)
         self.kp_tabel.show()
 
     def click_cell(self, row, col):
@@ -267,5 +271,9 @@ class KeyPointTable:
 
     def after_move_action(self, idx_face, idx_point):
         pt = self.kp_cluster.pts[idx_face][idx_point]
-        self.kp_tabel.item(idx_point, 1).setText("%.1f" % pt.precision_x)
-        self.kp_tabel.item(idx_point, 2).setText("%.1f" % pt.precision_y)
+        x = "%.1f" % pt.precision_x
+        y = "%.1f" % pt.precision_y
+        self.kp_tabel.item(idx_point, 1).setText(x)
+        self.kp_tabel.item(idx_point, 2).setText(y)
+        if x == self.backup_kp[idx_point][0] and y == self.backup_kp[idx_point][1]:
+            self.kp_tabel.item(idx_point, 4).setText("No")

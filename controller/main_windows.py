@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(self.tr("n")), self, self.next)
 
         self.sub_window = QWidget(self)
-        self.sub_window.resize(1000, 640)
+        self.sub_window.resize(640, 640)
         self.sub_window.setWindowFlags(Qt.FramelessWindowHint)
         self.sub_window.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         self.save_btn.setFont(font)
         self.save_btn.resize(50, 30)
-        self.save_btn.move(1015, 0)
+        self.save_btn.move(650, 0)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
     def read_dir_images(self, dirname="./"):
@@ -86,7 +86,7 @@ class MainWindow(QMainWindow):
             return
         if hasattr(self, "image_label") and self.image_label is not None:
             sip.delete(self.image_label)
-            sip.delete(self.face_label)
+            del self.face_label
             # sip.delete(self.scroll)
             # sip.delete(self.vbox)
             del self.kp_cluster
@@ -117,10 +117,10 @@ class MainWindow(QMainWindow):
         self.image_label.bind_show(self.update_message_status)
 
         self.kp_tabel = KeyPointTable(self.kp_cluster, self)
-        self.kp_tabel.move(1020, 100)
+        self.kp_tabel.move(650, 25)
 
         self.face_label = Labels(self)
-        self.face_label.move(1020, 30)
+        self.face_label.move(880, 45)
 
     def next(self):
         # self._save_keypoints(self.idx, True)
@@ -136,6 +136,9 @@ class MainWindow(QMainWindow):
             f.write("%d\n" % len(results))
             for result in results:
                 f.write("%s\n" % result)
+            results = self.face_label.get_labels()
+            for name, value in results.items():
+                f.write("{}, {}\n".format(name, " ".join(value)))
 
     def _clicked_save_btn(self):
         self._save_keypoints(self.idx, False)

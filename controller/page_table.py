@@ -201,8 +201,8 @@ class BulkIndexTabelWidget(QWidget):
             end_idx = min(start_idx + self.limit_num_page, self.rows)
             btn = QPushButton("{}~{}".format(start_idx, end_idx - 1), self)
             btn.clicked.connect(partial(self.page_controller, idx))
-            btn.move(34 * self.cols, idx * 50)
-            btn.resize(65, 30)
+            btn.move(idx * 50, 0)
+            btn.resize(60, 30)
             self.jump_pages.append(btn)
         self.page_controller(0)
 
@@ -230,8 +230,8 @@ class BulkIndexTabelWidget(QWidget):
                         table.setCellWidget(irow, icol, item)
             table.verticalHeader().hide()
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
-            table.move(0, 0)
-            table.resize(34 * self.cols - 2, 550)
+            table.move(10, 30)
+            table.resize(34 * self.cols - 2, 600)
             for i in range(table.columnCount()):
                 table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
             self.table_list.append(table)

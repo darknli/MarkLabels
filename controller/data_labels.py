@@ -1,37 +1,52 @@
 from PyQt5.QtWidgets import QCheckBox, QPushButton, \
-    QComboBox, QWidget
+    QLabel, QWidget
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QFont
 from functools import partial
 
 AGE = ["婴儿(0-4)", "儿童(5-18)", "青年(19-30)", "中老年(31-150)", "未知"]
+# AGE = ["0-4", "5-18", "19-30", "30-150", "未知"]
 RACE = ["黄", "白", "黑", "未知"]
 GENDER = ["男", "女", "未知"]
+EXPRESSION = ["无", "开心", "愤怒", "悲伤", "未知"]
 
 class Selector(QWidget):
-    def __init__(self, values, parent):
+    def __init__(self, name, values, parent):
         super(Selector, self).__init__(parent)
+        # self.setStyleSheet("border:1px solid red")
+        # self.setStyleSheet("border:1px solid black;")
         self.check_boxes = []
-        span = 0
+        span = 40
+        label = QLabel(name, self)
+        label.setStyleSheet("border:1px solid black;")
         for i, v in enumerate(values):
-            width_b = len(v) * 6 + 30
-            # width_b = 100
-            cb = QCheckBox(v, self)
-            cb.move(span, 0)
-            cb.resize(width_b, 20)
-            span += width_b
+            # width_b = len(v) * 5 + 40
+            height_b = 20
+
+            num_lines = len(v) // 3 + 1
+            if num_lines > 1:
+                v = list(v)
+                v = "\n".join(["".join(v[s:s+4]) for s in range(0, len(v), 3)])
+                # v = "".join(v)
+                cb = QCheckBox(v, self)
+            else:
+                cb = QCheckBox(v, self)
+            cb.move(0, span)
+            cb.resize(40, height_b * num_lines)
+            span += height_b * num_lines
             if v == "未知":
                 self.unknow_box_idx = i
             cb.stateChanged.connect(partial(self.set_unknow, i))
             self.check_boxes.append(cb)
+        self.check_boxes[self.unknow_box_idx].setChecked(True)
         self.values = values
-        self.shield_signal = False
 
     def get_selected_value(self):
         results = []
         for b, v in zip(self.check_boxes, self.values):
             if b.isChecked():
                 results.append(v)
+        return results
 
     def set_unknow(self, idx):
         if hasattr(self, "unknow_box_idx") and self.check_boxes[idx].isChecked():
@@ -46,16 +61,23 @@ class Selector(QWidget):
 class Labels:
     def __init__(self, parent):
         self.panel = QWidget(parent)
-        self.panel.resize(500, 200)
-        self.age = Selector(AGE, self.panel)
+        self.panel.resize(500, 500)
+
+        self.age = Selector("年龄", AGE, self.panel)
         self.age.move(0, 0)
-        self.age.resize(400, 20)
-        self.race = Selector(RACE, self.panel)
-        self.race.move(0, 20)
-        self.race.resize(400, 20)
-        self.gender = Selector(GENDER, self.panel)
-        self.gender.move(0, 40)
-        self.gender.resize(400, 20)
+        self.age.resize(60, 600)
+
+        self.race = Selector("人种", RACE, self.panel)
+        self.race.move(60, 0)
+        self.race.resize(60, 600)
+
+        self.gender = Selector("性别", GENDER, self.panel)
+        self.gender.move(120, 0)
+        self.gender.resize(60, 600)
+
+        self.expression = Selector("表情", EXPRESSION, self.panel)
+        self.expression.move(180, 0)
+        self.expression.resize(60, 600)
         self.panel.show()
 
         font = QFont()
@@ -73,12 +95,15 @@ class Labels:
         self.age.setFont(font)
         self.race.setFont(font)
         self.gender.setFont(font)
+        self.expression.setFont(font)
 
     def get_labels(self):
         results = {}
         results["age"] = self.age.get_selected_value()
         results["race"] = self.race.get_selected_value()
-        results["gender"] = self.race.get_selected_value()
+        results["gender"] = self.gender.get_selected_value()
+        results["expression"] = self.expression.get_selected_value()
+        return results
 
 from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt
