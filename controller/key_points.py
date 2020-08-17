@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, \
-    QTableWidgetItem, QApplication, QHeaderView, QAbstractItemView
+    QTableWidgetItem, QHeaderView
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QFont
 from functools import partial
+from controller.page_table import BulkIndexTabelWidget
 
 class Keypoint(QLabel):
     def __init__(self, parent, loc, upper_controller, idx_face, idx_points, visible=True):
@@ -95,8 +96,8 @@ class Keypoint(QLabel):
     def rescale_shift(self, scale, shift):
         self.scale = scale
         self.shift = shift
-        fact_x = int(scale * (self.precision_x + shift.x()))
-        fact_y = int(scale * (self.precision_y + shift.y()))
+        fact_x = int(scale * (self.precision_x + shift.x()) + 0.5)
+        fact_y = int(scale * (self.precision_y + shift.y()) + 0.5)
         self.move(fact_x, fact_y)
 
     def relative_move(self, x, y):
@@ -183,8 +184,7 @@ class KeyPointTable:
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         rows = len(kp_cluster.pts[0])
-        self.kp_tabel = QTableWidget(rows, 5, parent)
-        self.kp_tabel.setFont(font)
+        self.kp_tabel = BulkIndexTabelWidget(rows, 5, 17, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)
@@ -203,17 +203,20 @@ class KeyPointTable:
             self.kp_tabel.setItem(i, 2, QTableWidgetItem("%.1f" % kp.precision_y))
             self.kp_tabel.setCellWidget(i, 3, visible_btn)
             self.kp_tabel.setItem(i, 4, QTableWidgetItem("No"))
-        self.kp_tabel.cellChanged.connect(self.cell_change)
-        self.kp_tabel.cellClicked.connect(self.click_cell)
-        self.kp_tabel.resize(182, 550)
+        self.kp_tabel.load_data()
+        self.kp_tabel.setFont(font)
+        self.kp_tabel.cellChangedconnect(self.cell_change)
+        self.kp_tabel.cellClickedconnect(self.click_cell)
+        self.kp_tabel.resize(300, 540)
         self.kp_tabel.show()
-        self.kp_tabel.verticalHeader().hide()
-        for i in range(self.kp_tabel.columnCount()):
-            self.kp_tabel.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
+        # self.kp_tabel.verticalHeader().hide()
+        # for i in range(self.kp_tabel.columnCount()):
+        #     self.kp_tabel.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
 
     def click_cell(self, row, col):
-        print("click!!!!", row, col)
-        self._highlight(self.kp_cluster.pts[0][row])
+        real_row = int(self.kp_tabel.item(row, 0).text())
+        print("click!!!!", real_row, col)
+        self._highlight(self.kp_cluster.pts[0][real_row])
         if col == 1 or col == 2:
             self.kp_cluster.release_keyboard()
         elif col == 4:
@@ -225,10 +228,11 @@ class KeyPointTable:
     def cell_change(self, row, col):
         if col != 1 and col != 2:
             return
+        real_row = int(self.kp_tabel.item(row, 0).text())
         value = self.kp_tabel.item(row, col).text()
-        if value != self.backup_kp[row][col == 2]:
+        if value != self.backup_kp[real_row][col == 2]:
             self.kp_tabel.item(row, 4).setText("Yes")
-        self.kp_cluster.change_location(0, row, col == 1, float(value))
+        self.kp_cluster.change_location(0, real_row, col == 1, float(value))
 
     def move(self, x, y):
         self.kp_tabel.move(x, y)

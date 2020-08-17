@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
         self.image_label.bind_show(self.update_message_status)
 
         self.kp_tabel = KeyPointTable(self.kp_cluster, self)
-        self.kp_tabel.move(1020, 80)
+        self.kp_tabel.move(1020, 100)
 
     def next(self):
         # self._save_keypoints(self.idx, True)
