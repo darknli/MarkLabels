@@ -1,10 +1,12 @@
 from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, QWidget, QVBoxLayout,\
-    QHBoxLayout, QLineEdit, QMessageBox, QTableWidgetItem
+    QHBoxLayout, QLineEdit, QMessageBox, QTableWidgetItem, QAbstractItemView
 from math import ceil
 from functools import partial
 
 class TableWidget(QWidget):
-
+    """
+    带导航界面的table
+    """
     def __init__(self, rows, cols, limit_num_page, parent):
         super(TableWidget, self).__init__(parent)
         self.rows, self.cols = rows, cols
@@ -157,6 +159,9 @@ class TableWidget(QWidget):
 
 
 class BulkIndexTabelWidget(QWidget):
+    """
+    带分页button的table
+    """
     def __init__(self, rows, cols, limit_num_page, parent):
         super(BulkIndexTabelWidget, self).__init__(parent)
         self.rows, self.cols = rows, cols
@@ -201,7 +206,6 @@ class BulkIndexTabelWidget(QWidget):
             self.jump_pages.append(btn)
         self.page_controller(0)
 
-
     def page_controller(self, idx):
         self.now_idx_page = idx
         self.reload_table(idx)  # 改变表格内容
@@ -225,6 +229,7 @@ class BulkIndexTabelWidget(QWidget):
                     else:
                         table.setCellWidget(irow, icol, item)
             table.verticalHeader().hide()
+            table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.move(0, 0)
             table.resize(34 * self.cols - 2, 550)
             for i in range(table.columnCount()):
@@ -239,9 +244,17 @@ class BulkIndexTabelWidget(QWidget):
                 table.show()
             else:
                 table.hide()
+        self.now_idx_page = page_idx
+
+    def select(self, row):
+        idx = row // self.limit_num_page
+        real_row = row % self.limit_num_page
+        self.reload_table(idx)
+        self.table_list[self.now_idx_page].setCurrentCell(real_row, 0)
 
     def item(self, row, col):
-        return self.table_list[self.now_idx_page].item(row, col)
+        real_row = row % self.limit_num_page
+        return self.table_list[self.now_idx_page].item(real_row, col)
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QHeaderView
 from PyQt5.QtGui import QPalette, QFont

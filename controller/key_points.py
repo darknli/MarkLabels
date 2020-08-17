@@ -5,6 +5,11 @@ from PyQt5.QtGui import QPalette, QFont
 from functools import partial
 from controller.page_table import BulkIndexTabelWidget
 
+visiable_color = Qt.green
+disvisiable_color = Qt.darkGreen
+seleted_color = Qt.red
+
+
 class Keypoint(QLabel):
     def __init__(self, parent, loc, upper_controller, idx_face, idx_points, visible=True):
         super().__init__(parent)
@@ -14,7 +19,7 @@ class Keypoint(QLabel):
         self.resize(5, 5)
         self.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
-        palette.setColor(QPalette.Window, Qt.black)
+        palette.setColor(QPalette.Window, visiable_color)
         self.setPalette(palette)
         self.setAlignment(Qt.AlignCenter)
         self.visible = visible
@@ -29,9 +34,9 @@ class Keypoint(QLabel):
     def set_important_point(self, is_highlight=False):
         palette = QPalette()  # 创建调色板类实例
         if is_highlight:
-            palette.setColor(QPalette.Window, Qt.red)
+            palette.setColor(QPalette.Window, seleted_color)
         else:
-            palette.setColor(QPalette.Window, Qt.black)
+            palette.setColor(QPalette.Window, visiable_color)
         self.setPalette(palette)
         self.setAlignment(Qt.AlignCenter)
         self.repaint()
@@ -82,6 +87,7 @@ class Keypoint(QLabel):
         self.set_important_point(True)
         self.grabKeyboard()
         self.upper_controller.notify_other_points_normal(self.idx_face, self.idx_points)
+        self.move_controller.table_select_action(self.idx_points)
 
     def set_visible(self):
         self.visible = not self.visible
@@ -154,7 +160,7 @@ class KeypointsCluster:
         points_str_list = []
         for pts_controller in self.pts:
             points_str = " ".join(
-                ["%.1f %.1f %d"%(pt.geometry().x(), pt.geometry().y(), pt.visible) for pt in pts_controller])
+                ["%.1f %.1f %d"%(pt.precision_x, pt.precision_y, pt.visible) for pt in pts_controller])
             points_str_list.append(points_str)
         return points_str_list
 
@@ -177,6 +183,9 @@ class KeypointsCluster:
 
     def after_move_action(self, idx_face, idx_point):
         self.move_controller.after_move_action(idx_face, idx_point)
+
+    def table_select_action(self, row):
+        self.move_controller.select_table_line(row)
 
 class KeyPointTable:
     def __init__(self, kp_cluster, parent):
@@ -209,13 +218,9 @@ class KeyPointTable:
         self.kp_tabel.cellClickedconnect(self.click_cell)
         self.kp_tabel.resize(300, 540)
         self.kp_tabel.show()
-        # self.kp_tabel.verticalHeader().hide()
-        # for i in range(self.kp_tabel.columnCount()):
-        #     self.kp_tabel.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
 
     def click_cell(self, row, col):
         real_row = int(self.kp_tabel.item(row, 0).text())
-        print("click!!!!", real_row, col)
         self._highlight(self.kp_cluster.pts[0][real_row])
         if col == 1 or col == 2:
             self.kp_cluster.release_keyboard()
@@ -224,6 +229,9 @@ class KeyPointTable:
                 self.kp_tabel.item(row, 1).setText(self.backup_kp[row][0])
                 self.kp_tabel.item(row, 2).setText(self.backup_kp[row][1])
                 self.kp_tabel.item(row, 4).setText("No")
+
+    def select_table_line(self, row):
+        self.kp_tabel.select(row)
 
     def cell_change(self, row, col):
         if col != 1 and col != 2:
