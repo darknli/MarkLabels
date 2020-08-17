@@ -51,9 +51,11 @@ class MainWindow(QMainWindow):
         self.save_btn.move(650, 0)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
-    def read_dir_images(self, dirname="./"):
+    def read_dir_images(self, dirname="./", start_idx=0):
         from glob import glob
         files = glob(join(dirname, "*"))
+        files.sort()
+        files = files[start_idx:]
         self.images = []
         for file in files:
             if "png" in file or "jpg" in file or "jpeg" in file:
@@ -81,6 +83,7 @@ class MainWindow(QMainWindow):
                 self.image2pts[image_path] = pts
 
     def run(self):
+        print(self.idx)
         if len(self.images) == 0:
             print("空")
             return
