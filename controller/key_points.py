@@ -19,7 +19,10 @@ class Keypoint(QLabel):
         self.resize(5, 5)
         self.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
-        palette.setColor(QPalette.Window, visiable_color)
+        if visible:
+            palette.setColor(QPalette.Window, visiable_color)
+        else:
+            palette.setColor(QPalette.Window, disvisiable_color)
         self.setPalette(palette)
         self.setAlignment(Qt.AlignCenter)
         self.visible = visible
@@ -35,10 +38,12 @@ class Keypoint(QLabel):
         palette = QPalette()  # 创建调色板类实例
         if is_highlight:
             palette.setColor(QPalette.Window, seleted_color)
-        else:
+        elif self.visible:
             palette.setColor(QPalette.Window, visiable_color)
+        else:
+            palette.setColor(QPalette.Window, disvisiable_color)
         self.setPalette(palette)
-        self.setAlignment(Qt.AlignCenter)
+        # self.setAlignment(Qt.AlignCenter)
         self.repaint()
 
     def mousePressEvent(self, e):
@@ -91,6 +96,13 @@ class Keypoint(QLabel):
 
     def set_visible(self):
         self.visible = not self.visible
+        palette = QPalette()  # 创建调色板类实例
+        if self.visible:
+            palette.setColor(QPalette.Window, visiable_color)
+        else:
+            palette.setColor(QPalette.Window, disvisiable_color)
+        self.setPalette(palette)
+        self.repaint()
 
     def bind_point_move_controller(self, move_controller):
         self.move_controller = move_controller
