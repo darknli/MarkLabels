@@ -64,13 +64,16 @@ class ImageController(QLabel):
             self.left_click = False
 
     def wheelEvent(self, e):
+        cpoint = QPoint(e.x(), e.y())
+        last_ratio = self.ratio
         if e.angleDelta().y() > 0:
             self.ratio = min(self.ratio + 0.1, MAX_SCALE)
         elif e.angleDelta().y() < 0:
             self.ratio = max(self.ratio - 0.1, MIN_SCALE)
         self.scaled_img = self.img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
-        self.point = QPoint(0, 0) + self.global_shift * self.ratio
-        self.right_point = QPoint(self.scaled_img.height(), self.scaled_img.width())
+        self.point = cpoint - (cpoint - self.point) * self.ratio / last_ratio
+        self.global_shift = self.point / self.ratio
+        self.right_point = QPoint(self.scaled_img.height(), self.scaled_img.width()) + self.point
         if self.kp_move is not None:
             self.kp_move(self.ratio, self.global_shift)
         self.update_show_status()
