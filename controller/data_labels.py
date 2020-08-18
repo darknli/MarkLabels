@@ -13,21 +13,17 @@ EXPRESSION = ["无", "开心", "愤怒", "悲伤", "未知"]
 class Selector(QWidget):
     def __init__(self, name, values, parent):
         super(Selector, self).__init__(parent)
-        # self.setStyleSheet("border:1px solid red")
-        # self.setStyleSheet("border:1px solid black;")
         self.check_boxes = []
         span = 40
         label = QLabel(name, self)
         label.setStyleSheet("border:1px solid black;")
         for i, v in enumerate(values):
-            # width_b = len(v) * 5 + 40
             height_b = 20
 
             num_lines = len(v) // 3 + 1
             if num_lines > 1:
                 v = list(v)
                 v = "\n".join(["".join(v[s:s+4]) for s in range(0, len(v), 3)])
-                # v = "".join(v)
                 cb = QCheckBox(v, self)
             else:
                 cb = QCheckBox(v, self)

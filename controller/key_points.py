@@ -38,6 +38,7 @@ class Keypoint(QLabel):
     def set_important_point(self, is_highlight=False):
         palette = QPalette()  # 创建调色板类实例
         if is_highlight:
+            self.raise_()
             palette.setColor(QPalette.Window, seleted_color)
         elif self.visible:
             palette.setColor(QPalette.Window, visiable_color)
