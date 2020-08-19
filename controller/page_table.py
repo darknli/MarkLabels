@@ -234,7 +234,7 @@ class BulkIndexTabelWidget(QWidget):
             table.verticalHeader().hide()
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.move(10, 30)
-            table.resize(34 * self.cols - 2, 600)
+            table.resize(36 * self.cols, 600)
             for i in range(table.columnCount()):
                 table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
             self.table_list.append(table)

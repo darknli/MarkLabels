@@ -177,7 +177,7 @@ class KeypointsCluster:
         points_str_list = []
         for pts_controller in self.pts:
             points_str = " ".join(
-                ["%.1f %.1f %d"%(pt.precision_x, pt.precision_y, pt.visible) for pt in pts_controller])
+                ["%.6f %.6f %d" % (pt.precision_x, pt.precision_y, pt.visible) for pt in pts_controller])
             points_str_list.append(points_str)
         return points_str_list
 
@@ -185,9 +185,11 @@ class KeypointsCluster:
         # 是x值
         pt = self.pts[idx_face][idx_point]
         if xory:
-            pt.relative_move(v, pt.precision_y)
+            if v != "%.2f" % pt.precision_x:
+                pt.relative_move(float(v), pt.precision_y)
         else:
-            pt.relative_move(pt.precision_x, v)
+            if v != "%.2f" % pt.precision_y:
+                pt.relative_move(pt.precision_x, float(v))
 
     def scale_loc(self, scale, shift):
         for pts in self.pts:
@@ -216,7 +218,7 @@ class KeyPointTable:
         self.kp_cluster.bind_point_move_controller(self)
         self.backup_kp = []
         for i, kp in enumerate(kp_cluster.pts[0]):
-            self.backup_kp.append(("%.1f" % kp.precision_x, "%.1f" % kp.precision_y))
+            self.backup_kp.append(("%.2f" % kp.precision_x, "%.2f" % kp.precision_y))
             visible_btn = QPushButton("Yes" if kp.visible else "No")
             visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn))
             # visible_btn.resize(3, 3)
@@ -225,15 +227,15 @@ class KeyPointTable:
             visible_btn.setFlat(True)
             # self.kp_tabel.setCellWidget(i, 0, btn)
             self.kp_tabel.setItem(i, 0, QTableWidgetItem(str(i)))
-            self.kp_tabel.setItem(i, 1, QTableWidgetItem("%.1f" % kp.precision_x))
-            self.kp_tabel.setItem(i, 2, QTableWidgetItem("%.1f" % kp.precision_y))
+            self.kp_tabel.setItem(i, 1, QTableWidgetItem("%.2f" % kp.precision_x))
+            self.kp_tabel.setItem(i, 2, QTableWidgetItem("%.2f" % kp.precision_y))
             self.kp_tabel.setCellWidget(i, 3, visible_btn)
             self.kp_tabel.setItem(i, 4, QTableWidgetItem("No"))
         self.kp_tabel.load_data()
         self.kp_tabel.setFont(font)
         self.kp_tabel.cellChangedconnect(self.cell_change)
         self.kp_tabel.cellClickedconnect(self.click_cell)
-        self.kp_tabel.resize(300, 650)
+        self.kp_tabel.resize(320, 650)
         self.kp_tabel.show()
 
     def click_cell(self, row, col):
@@ -257,7 +259,7 @@ class KeyPointTable:
         value = self.kp_tabel.item(row, col).text()
         if value != self.backup_kp[real_row][col == 2]:
             self.kp_tabel.item(row, 4).setText("Yes")
-        self.kp_cluster.change_location(0, real_row, col == 1, float(value))
+        self.kp_cluster.change_location(0, real_row, col == 1, value)
 
     def move(self, x, y):
         self.kp_tabel.move(x, y)
@@ -272,8 +274,8 @@ class KeyPointTable:
 
     def after_move_action(self, idx_face, idx_point):
         pt = self.kp_cluster.pts[idx_face][idx_point]
-        x = "%.1f" % pt.precision_x
-        y = "%.1f" % pt.precision_y
+        x = "%.2f" % pt.precision_x
+        y = "%.2f" % pt.precision_y
         self.kp_tabel.item(idx_point, 1).setText(x)
         self.kp_tabel.item(idx_point, 2).setText(y)
         if x == self.backup_kp[idx_point][0] and y == self.backup_kp[idx_point][1]:

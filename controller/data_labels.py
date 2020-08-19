@@ -79,21 +79,21 @@ class Labels:
         self.panel = QWidget(parent)
         self.panel.resize(500, 500)
 
-        self.age = Selector("年龄", AGE, self.panel)
-        self.age.move(0, 0)
-        self.age.resize(60, 600)
-
         self.race = Selector("人种", RACE, self.panel)
         self.race.move(60, 0)
         self.race.resize(60, 600)
 
         self.gender = Selector("性别", GENDER, self.panel)
-        self.gender.move(120, 0)
+        self.gender.move(0, 0)
         self.gender.resize(60, 600)
 
         self.expression = Selector("表情", EXPRESSION, self.panel)
-        self.expression.move(180, 0)
+        self.expression.move(120, 0)
         self.expression.resize(60, 600)
+
+        self.age = Selector("年龄", AGE, self.panel)
+        self.age.move(180, 0)
+        self.age.resize(60, 600)
         self.panel.show()
 
         font = QFont()
