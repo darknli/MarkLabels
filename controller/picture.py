@@ -31,6 +31,7 @@ class ImageController(QLabel):
         painter.end()
 
     def draw_img(self, painter):
+        print(self.point)
         painter.drawPixmap(self.point, self.scaled_img)
 
     def resizeEvent(self, e):
@@ -42,8 +43,9 @@ class ImageController(QLabel):
             move_distance = e.pos() - self._startPos
             move_distance += self.global_shift * self.ratio
             delta_x, delta_y = move_distance.x(), move_distance.y()
-            delta_x = max(min(delta_x, 0), self.width() - self.img.width()*self.ratio)
-            delta_y = max(min(delta_y, 0), self.height() - self.img.height()*self.ratio)
+            delta_x = min(max(delta_x, self.width() - self.img.width()*self.ratio), 0)
+            delta_y = min(max(delta_y, self.height() - self.img.height()*self.ratio), 0)
+            # print("delta_x {}, delta_y {}".format(delta_x, delta_y))
             move_distance.setX(delta_x)
             move_distance.setY(delta_y)
             self.global_shift = move_distance / self.ratio
@@ -72,6 +74,10 @@ class ImageController(QLabel):
             self.ratio = max(self.ratio - 0.1, MIN_SCALE)
         self.scaled_img = self.img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
         self.point = cpoint - (cpoint - self.point) * self.ratio / last_ratio
+        self.global_shift = self.point / self.ratio
+        delta_x = min(max(self.point.x(), self.width() - self.img.width() * self.ratio), 0)
+        delta_y = min(max(self.point.y(), self.height() - self.img.height() * self.ratio), 0)
+        self.point = QPoint(delta_x, delta_y)
         self.global_shift = self.point / self.ratio
         self.right_point = QPoint(self.scaled_img.height(), self.scaled_img.width()) + self.point
         if self.kp_move is not None:
