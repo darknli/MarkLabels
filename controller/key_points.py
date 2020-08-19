@@ -34,6 +34,16 @@ class Keypoint(QLabel):
         self.move(int(self.precision_x + 0.5), int(self.precision_y + 0.5))
         self.scale = 1
         self.shift = QPoint(0, 0)
+        self.label = QLabel(str(idx_points), parent)
+        self.label.setStyleSheet('color:rgb(255, 120, 255)')
+        self.label.move(self.geometry().x(), self.geometry().y())
+        self.raise_()
+
+    def set_label(self, flag):
+        if flag:
+            self.label.show()
+        else:
+            self.label.hide()
 
     def set_important_point(self, is_highlight=False):
         palette = QPalette()  # 创建调色板类实例
@@ -68,6 +78,7 @@ class Keypoint(QLabel):
         self.precision_x = x / self.scale - self.shift.x()
         self.precision_y = y / self.scale - self.shift.y()
         self.move(int(x + 0.5), int(y + 0.5))
+        self.label.move(int(x + 0.5), int(y + 0.5))
 
     def keyPressEvent(self, event):
         # 如果按下xxx则xxx
@@ -122,6 +133,7 @@ class Keypoint(QLabel):
         fact_x = int(scale * (self.precision_x + shift.x()) + 0.5)
         fact_y = int(scale * (self.precision_y + shift.y()) + 0.5)
         self.move(fact_x, fact_y)
+        self.label.move(fact_x, fact_y)
 
     def relative_move(self, x, y):
         self.precision_x = x
@@ -129,6 +141,7 @@ class Keypoint(QLabel):
         fact_x = int(self.scale * (self.precision_x + self.shift.x()) + 0.5)
         fact_y = int(self.scale * (self.precision_y + self.shift.y()) + 0.5)
         self.move(fact_x, fact_y)
+        self.label.move(fact_x, fact_y)
 
 class KeypointsCluster:
     def __init__(self, pts_list, prarent):
@@ -205,6 +218,11 @@ class KeypointsCluster:
 
     def table_select_action(self, row):
         self.move_controller.select_table_line(row)
+
+    def show_number(self, flag):
+        for pt in self.pts[0]:
+            pt.set_label(flag)
+            pt.repaint()
 
 class KeyPointTable:
     def __init__(self, kp_cluster, parent):

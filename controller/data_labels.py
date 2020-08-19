@@ -19,17 +19,17 @@ class Selector(QWidget):
         label.setStyleSheet("border:1px solid black;")
         values.append("未标")
         for i, v in enumerate(values):
-            height_b = 20
+            height_b = 25
 
             num_lines = len(v) // 3 + 1
             if num_lines > 1:
                 v = list(v)
-                v = "\n".join(["".join(v[s:s+4]) for s in range(0, len(v), 3)])
+                v = "\n".join(["".join(v[s:s+3]) for s in range(0, len(v), 3)])
                 cb = QCheckBox(v, self)
             else:
                 cb = QCheckBox(v, self)
             cb.move(0, span)
-            cb.resize(40, height_b * num_lines)
+            cb.resize(50, height_b * num_lines)
             span += height_b * num_lines
             if v == "未知":
                 self.unknow_box_idx = i
@@ -77,21 +77,21 @@ class Selector(QWidget):
 class Labels:
     def __init__(self, parent):
         self.panel = QWidget(parent)
-        self.panel.resize(500, 500)
+        self.panel.resize(600, 600)
 
-        self.race = Selector("人种", RACE, self.panel)
+        self.race = Selector("肤色", RACE.copy(), self.panel)
         self.race.move(60, 0)
         self.race.resize(60, 600)
 
-        self.gender = Selector("性别", GENDER, self.panel)
+        self.gender = Selector("性别", GENDER.copy(), self.panel)
         self.gender.move(0, 0)
         self.gender.resize(60, 600)
 
-        self.expression = Selector("表情", EXPRESSION, self.panel)
+        self.expression = Selector("表情", EXPRESSION.copy(), self.panel)
         self.expression.move(120, 0)
         self.expression.resize(60, 600)
 
-        self.age = Selector("年龄", AGE, self.panel)
+        self.age = Selector("年龄", AGE.copy(), self.panel)
         self.age.move(180, 0)
         self.age.resize(60, 600)
         self.panel.show()

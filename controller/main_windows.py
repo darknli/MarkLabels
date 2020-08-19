@@ -51,6 +51,12 @@ class MainWindow(QMainWindow):
         self.save_btn.move(650, 0)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
+        self.show_number = QPushButton("显示编号", self)
+        self.show_number.setFont(font)
+        self.show_number.resize(70, 30)
+        self.show_number.move(700, 0)
+        self.show_number.clicked.connect(self._clicked_show_btn)
+
     def read_dir_images(self, dirname="./", start_idx=0):
         from glob import glob
         files = glob(join(dirname, "*"))
@@ -107,7 +113,7 @@ class MainWindow(QMainWindow):
         # self.vbox.setContentsMargins(0, 0, 0, 0)
         # self.vbox.addWidget(self.scroll)
         # self.sub_window.setLayout(self.vbox)
-        #
+        self.show_number.setText("显示编号")
         self.status = self.statusBar()
         self.status.showMessage("{}, {}x{}, ratio={}".format(
             self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
@@ -145,6 +151,15 @@ class MainWindow(QMainWindow):
 
     def _clicked_save_btn(self):
         self._save_keypoints(self.idx, False)
+
+    def _clicked_show_btn(self):
+        if "显示编号" == self.show_number.text():
+            self.show_number.setText("隐藏编号")
+            self.kp_cluster.show_number(True)
+        else:
+            self.show_number.setText("显示编号")
+            self.kp_cluster.show_number(False)
+
 
     def _clicked_withdraw_btn(self):
         self.kp_tabel.reset_point()
