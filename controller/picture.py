@@ -31,7 +31,6 @@ class ImageController(QLabel):
         painter.end()
 
     def draw_img(self, painter):
-        print(self.point)
         painter.drawPixmap(self.point, self.scaled_img)
 
     def resizeEvent(self, e):

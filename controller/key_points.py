@@ -31,7 +31,7 @@ class Keypoint(QLabel):
         self.idx_face = idx_face
         self.idx_points = idx_points
         self.parent = parent
-        self.move(*loc)
+        self.move(int(self.precision_x + 0.5), int(self.precision_y + 0.5))
         self.scale = 1
         self.shift = QPoint(0, 0)
 
@@ -67,7 +67,7 @@ class Keypoint(QLabel):
         x, y = loc
         self.precision_x = x / self.scale - self.shift.x()
         self.precision_y = y / self.scale - self.shift.y()
-        self.move(*loc)
+        self.move(int(x + 0.5), int(y + 0.5))
 
     def keyPressEvent(self, event):
         # 如果按下xxx则xxx

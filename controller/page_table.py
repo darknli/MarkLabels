@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, QWidget, QVBoxLayout,\
     QHBoxLayout, QLineEdit, QMessageBox, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtCore import Qt
 from math import ceil
 from functools import partial
 
@@ -224,6 +225,8 @@ class BulkIndexTabelWidget(QWidget):
             for irow, idx in enumerate(range(start_idx, end_idx)):
                 item_list = self.backstage_value[idx]
                 for icol, item in enumerate(item_list):
+                    if icol == 0:
+                        item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                     if isinstance(item, QTableWidgetItem):
                         table.setItem(irow, icol, item)
                     else:
