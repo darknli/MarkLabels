@@ -44,7 +44,6 @@ class ImageController(QLabel):
             delta_x, delta_y = move_distance.x(), move_distance.y()
             delta_x = min(max(delta_x, self.width() - self.img.width()*self.ratio), 0)
             delta_y = min(max(delta_y, self.height() - self.img.height()*self.ratio), 0)
-            # print("delta_x {}, delta_y {}".format(delta_x, delta_y))
             move_distance.setX(delta_x)
             move_distance.setY(delta_y)
             self.global_shift = move_distance / self.ratio

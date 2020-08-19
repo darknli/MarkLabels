@@ -17,6 +17,7 @@ class Selector(QWidget):
         span = 40
         label = QLabel(name, self)
         label.setStyleSheet("border:1px solid black;")
+        values.append("未标")
         for i, v in enumerate(values):
             height_b = 20
 
@@ -34,7 +35,7 @@ class Selector(QWidget):
                 self.unknow_box_idx = i
             cb.stateChanged.connect(partial(self.set_unknow, i))
             self.check_boxes.append(cb)
-        self.check_boxes[self.unknow_box_idx].setChecked(True)
+        self.check_boxes[-1].setChecked(True)
         self.values = values
 
     def get_selected_value(self):
@@ -45,6 +46,8 @@ class Selector(QWidget):
         return results
 
     def set_unknow(self, idx):
+        for c in self.check_boxes:
+            c.disconnect()
         if hasattr(self, "unknow_box_idx") and self.check_boxes[idx].isChecked():
             if idx == self.unknow_box_idx:
                 for i, v in enumerate(self.check_boxes):
@@ -52,6 +55,23 @@ class Selector(QWidget):
                         v.setChecked(False)
             else:
                 self.check_boxes[self.unknow_box_idx].setChecked(False)
+
+        if idx == len(self.check_boxes) - 1:
+            for c in self.check_boxes[:-1]:
+                c.setChecked(False)
+            self.check_boxes[idx].setChecked(True)
+        elif not self.check_boxes[idx].isChecked():
+            has_select = False
+            for c in self.check_boxes[:-1]:
+                if c.isChecked():
+                    has_select = True
+            if not has_select:
+                self.check_boxes[-1].setChecked(True)
+        else:
+            self.check_boxes[-1].setChecked(False)
+        for i, c in enumerate(self.check_boxes):
+            c.stateChanged.connect(partial(self.set_unknow, i))
+
 
 
 class Labels:
