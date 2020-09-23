@@ -9,6 +9,7 @@ from controller.key_points import KeyPointTable, KeypointsCluster
 from controller.picture import ImageController
 from controller.data_labels import Labels
 from os.path import join, basename
+from controller.slider import MySlide
 import sip
 
 def move2center(self):
@@ -56,6 +57,11 @@ class MainWindow(QMainWindow):
         self.show_number.resize(70, 30)
         self.show_number.move(700, 0)
         self.show_number.clicked.connect(self._clicked_show_btn)
+
+        self.adjust_bright_slide = MySlide(self)
+        self.adjust_bright_slide.resize(100, 30)
+        self.adjust_bright_slide.move(760, 0)
+        self.adjust_bright_slide.bound_brightness(self._adjust_brightness)
 
     def read_dir_images(self, dirname="./", start_idx=0):
         from glob import glob
@@ -160,6 +166,8 @@ class MainWindow(QMainWindow):
             self.show_number.setText("显示编号")
             self.kp_cluster.show_number(False)
 
+    def _adjust_brightness(self, v):
+        self.image_label.adjust_brightness(v)
 
     def _clicked_withdraw_btn(self):
         self.kp_tabel.reset_point()

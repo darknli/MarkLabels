@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, \
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QKeySequence, QPixmap, QPainter
 from functools import partial
+from PIL import ImageQt, ImageEnhance
 
 MAX_SCALE = 10
 MIN_SCALE = 1
@@ -20,6 +21,7 @@ class ImageController(QLabel):
         self.global_shift = QPoint(0, 0)
         self.ratio = 1.0
         self.kp_move = None
+        self.value = 0
 
     def bind_show(self, update_show_status):
         self.update_show_status = update_show_status
@@ -81,7 +83,18 @@ class ImageController(QLabel):
         if self.kp_move is not None:
             self.kp_move(self.ratio, self.global_shift)
         self.update_show_status()
-        self.repaint()
+        # self.repaint()
+        self.adjust_brightness(self.value)
 
     def bind_keypoints_move(self, rescale_shift):
         self.kp_move = rescale_shift
+
+    def adjust_brightness(self, value):
+        self.value = value
+        value = (value + 10) / 10
+        image = ImageQt.fromqpixmap(self.img)
+        image = ImageEnhance.Brightness(image)
+        image = image.enhance(value)
+        scaled_img = ImageQt.toqpixmap(image)
+        self.scaled_img = scaled_img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
+        self.repaint()
