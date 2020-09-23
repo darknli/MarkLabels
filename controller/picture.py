@@ -8,6 +8,9 @@ from PIL import ImageQt, ImageEnhance
 MAX_SCALE = 10
 MIN_SCALE = 1
 
+PADDING = 100
+
+LEFT_POINT = QPoint(0, 0)
 
 class ImageController(QLabel):
     def __init__(self, image_path, parent):
@@ -15,10 +18,10 @@ class ImageController(QLabel):
         self.resize(parent.width(), parent.height())
         self.img = QPixmap(image_path)
         self.scaled_img = self.img.copy()
-        self.point = QPoint(0, 0)
-        self.left_point = QPoint(0, 0)
+        self.point = LEFT_POINT
+        self.left_point = LEFT_POINT
         self.right_point = QPoint(self.img.width(), self.img.height())
-        self.global_shift = QPoint(0, 0)
+        self.global_shift = LEFT_POINT
         self.ratio = 1.0
         self.kp_move = None
         self.value = 0
@@ -36,7 +39,7 @@ class ImageController(QLabel):
         painter.drawPixmap(self.point, self.scaled_img)
 
     def resizeEvent(self, e):
-        self.point = QPoint(0, 0)
+        self.point = LEFT_POINT
         self.update()
 
     def mouseMoveEvent(self, e):  # 重写移动事件
@@ -44,12 +47,12 @@ class ImageController(QLabel):
             move_distance = e.pos() - self._startPos
             move_distance += self.global_shift * self.ratio
             delta_x, delta_y = move_distance.x(), move_distance.y()
-            delta_x = min(max(delta_x, self.width() - self.img.width()*self.ratio), 0)
-            delta_y = min(max(delta_y, self.height() - self.img.height()*self.ratio), 0)
+            delta_x = min(max(delta_x, self.width() - self.img.width()*self.ratio - PADDING), PADDING)
+            delta_y = min(max(delta_y, self.height() - self.img.height()*self.ratio - PADDING), PADDING)
             move_distance.setX(delta_x)
             move_distance.setY(delta_y)
             self.global_shift = move_distance / self.ratio
-            self.point = QPoint(0, 0) + move_distance
+            self.point = LEFT_POINT + move_distance
             self.right_point = self.right_point + move_distance
             self._startPos = e.pos()
             if self.kp_move is not None:
