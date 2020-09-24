@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QFont
 from functools import partial
 from controller.page_table import BulkIndexTabelWidget
+from controller.utils import Rotator
 
 visiable_color = Qt.green
 disvisiable_color = Qt.blue
@@ -11,7 +12,7 @@ seleted_color = Qt.red
 
 
 class Keypoint(QLabel):
-    def __init__(self, parent, loc, upper_controller, idx_face, idx_points, visible=True):
+    def __init__(self, parent, loc, upper_controller, idx_face, idx_points, w, h, visible=True):
         super().__init__(parent)
         self.backup_loc = loc
         self.precision_x = loc[0]
@@ -38,6 +39,7 @@ class Keypoint(QLabel):
         self.label.setStyleSheet('color:rgb(255, 120, 255)')
         self.label.move(self.geometry().x(), self.geometry().y())
         self.raise_()
+        self.rotator = Rotator(w, h)
 
     def set_label(self, flag):
         if flag:
@@ -46,6 +48,10 @@ class Keypoint(QLabel):
             self.label.hide()
 
     def set_important_point(self, is_highlight=False):
+        """
+        是否设置该点成高亮颜色
+        :param is_highlight: 是否高亮
+        """
         palette = QPalette()  # 创建调色板类实例
         if is_highlight:
             self.raise_()
@@ -72,11 +78,17 @@ class Keypoint(QLabel):
         self.after_move_action(self.move_controller)
 
     def my_move(self, *loc):
+        """
+        先将坐标转换为基础坐标并保存到precisionxy，再做移动。
+        :param loc: 坐标，可选为(x, y)和Qpoint
+        """
         if len(loc) == 1:
             loc = (loc[0].x(), loc[0].y())
         x, y = loc
-        self.precision_x = x / self.scale - self.shift.x()
-        self.precision_y = y / self.scale - self.shift.y()
+
+        fact_x = x / self.scale - self.shift.x()
+        fact_y = y / self.scale - self.shift.y()
+        self.precision_x, self.precision_y = self.rotator.recover_location(fact_x, fact_y)
         self.move(int(x + 0.5), int(y + 0.5))
         self.label.move(int(x + 0.5), int(y + 0.5))
 
@@ -130,26 +142,40 @@ class Keypoint(QLabel):
     def rescale_shift(self, scale, shift):
         self.scale = scale
         self.shift = shift
-        fact_x = int(scale * (self.precision_x + shift.x()) + 0.5)
-        fact_y = int(scale * (self.precision_y + shift.y()) + 0.5)
+        fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
+        fact_x = round(scale * (fact_x + shift.x()))
+        fact_y = round(scale * (fact_y + shift.y()))
         self.move(fact_x, fact_y)
         self.label.move(fact_x, fact_y)
 
     def relative_move(self, x, y):
         self.precision_x = x
         self.precision_y = y
-        fact_x = int(self.scale * (self.precision_x + self.shift.x()) + 0.5)
-        fact_y = int(self.scale * (self.precision_y + self.shift.y()) + 0.5)
+        fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
+        fact_x = round(self.scale * (fact_x + self.shift.x()))
+        fact_y = round(self.scale * (fact_y + self.shift.y()))
+        self.move(fact_x, fact_y)
+        self.label.move(fact_x, fact_y)
+
+    def rotate90(self):
+        """
+        当图像有旋转的时候调用这个函数，设置使当前点跟图像同步+90°，并将上一次的平移量清零。
+        """
+        self.rotator.rotation()
+        self.shift = QPoint()
+        fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
+        fact_x = round(self.scale * fact_x)
+        fact_y = round(self.scale * fact_y)
         self.move(fact_x, fact_y)
         self.label.move(fact_x, fact_y)
 
 class KeypointsCluster:
-    def __init__(self, pts_list, prarent):
+    def __init__(self, pts_list, prarent, w, h):
         self.pts = []
         for idx_face, pts in enumerate(pts_list):
             controller = []
             for idx_point, (x, y) in enumerate(pts):
-                kp = Keypoint(prarent, (x, y), self, idx_face, idx_point)
+                kp = Keypoint(prarent, (x, y), self, idx_face, idx_point, w, h)
                 kp.bind_point_move_controller(self)
                 controller.append(kp)
                 kp.show()
@@ -223,6 +249,10 @@ class KeypointsCluster:
         for pt in self.pts[0]:
             pt.set_label(flag)
             pt.repaint()
+
+    def rotate90(self):
+        for pt in self.pts[0]:
+            pt.rotate90()
 
 class KeyPointTable:
     def __init__(self, kp_cluster, parent):

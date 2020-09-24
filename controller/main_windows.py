@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QDesktopWidget, QToolTip, QLabel, QShortcut,
-    QWidget, QPushButton, QApplication, QScrollArea, QVBoxLayout, QFrame
+    QMainWindow, QDesktopWidget, QShortcut,
+    QWidget, QPushButton, QFrame
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QKeySequence, QPalette, QFont
@@ -62,6 +62,15 @@ class MainWindow(QMainWindow):
         self.adjust_bright_slide.resize(100, 30)
         self.adjust_bright_slide.move(760, 0)
         self.adjust_bright_slide.bound_brightness(self._adjust_brightness)
+
+        self.rotate_button = QPushButton(self)
+        self.rotate_button.setStyleSheet("QPushButton{border-image: url(pic/rotate.png)}"
+                                  "QPushButton:hover{border-image: url(pic/rotate.png)}" 
+                                  "QPushButton:pressed{border-image: url(pic/rotate.png)}")
+
+        self.rotate_button.resize(20, 20)
+        self.rotate_button.move(860, 5)
+        self.rotate_button.clicked.connect(self._clicked_rotate_btn)
 
     def read_dir_images(self, dirname="./", start_idx=0):
         from glob import glob
@@ -127,7 +136,8 @@ class MainWindow(QMainWindow):
         image_name = basename(self.file)
         pts_list = self.image2pts[image_name]
 
-        self.kp_cluster = KeypointsCluster(pts_list, self.image_label)
+        w, h = self.image_label.image_size()
+        self.kp_cluster = KeypointsCluster(pts_list, self.image_label, w, h)
         self.image_label.bind_keypoints_move(self.kp_cluster.scale_loc)
         self.image_label.bind_show(self.update_message_status)
 
@@ -165,6 +175,10 @@ class MainWindow(QMainWindow):
         else:
             self.show_number.setText("显示编号")
             self.kp_cluster.show_number(False)
+
+    def _clicked_rotate_btn(self):
+        self.image_label.rotate_image()
+        self.kp_cluster.rotate90()
 
     def _adjust_brightness(self, v):
         self.image_label.adjust_brightness(v)

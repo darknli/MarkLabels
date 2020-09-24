@@ -2,8 +2,9 @@ from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, \
     QTableWidgetItem, QApplication, QHeaderView, QAbstractItemView
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QKeySequence, QPixmap, QPainter
+from controller.utils import Rotator
 from functools import partial
-from PIL import ImageQt, ImageEnhance
+from PIL import ImageQt, ImageEnhance, Image
 
 MAX_SCALE = 10
 MIN_SCALE = 1
@@ -24,7 +25,11 @@ class ImageController(QLabel):
         self.global_shift = LEFT_POINT
         self.ratio = 1.0
         self.kp_move = None
-        self.value = 0
+        self.brightness_v = 1
+        self.angle_v = 0
+
+    def image_size(self):
+        return self.img.width(), self.img.height()
 
     def bind_show(self, update_show_status):
         self.update_show_status = update_show_status
@@ -75,7 +80,7 @@ class ImageController(QLabel):
             self.ratio = min(self.ratio + 0.1, MAX_SCALE)
         elif e.angleDelta().y() < 0:
             self.ratio = max(self.ratio - 0.1, MIN_SCALE)
-        self.scaled_img = self.img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
+        self.scaled_img = self._filter()
         self.point = cpoint - (cpoint - self.point) * self.ratio / last_ratio
         self.global_shift = self.point / self.ratio
         delta_x = min(max(self.point.x(), self.width() - self.img.width() * self.ratio), 0)
@@ -86,18 +91,37 @@ class ImageController(QLabel):
         if self.kp_move is not None:
             self.kp_move(self.ratio, self.global_shift)
         self.update_show_status()
-        # self.repaint()
-        self.adjust_brightness(self.value)
+        self.repaint()
 
     def bind_keypoints_move(self, rescale_shift):
         self.kp_move = rescale_shift
 
     def adjust_brightness(self, value):
-        self.value = value
-        value = (value + 10) / 10
+        self.brightness_v = (value + 10) / 10
+        self.scaled_img = self._filter()
+        self.repaint()
+        
+    def _filter(self):
         image = ImageQt.fromqpixmap(self.img)
         image = ImageEnhance.Brightness(image)
-        image = image.enhance(value)
+        image = image.enhance(self.brightness_v)
+        if self.angle_v != 0:
+            image = image.transpose(getattr(Image, "ROTATE_{}".format(self.angle_v)))
         scaled_img = ImageQt.toqpixmap(image)
-        self.scaled_img = scaled_img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
+        if self.angle_v == 90 or self.angle_v == 270:
+            scaled_img = scaled_img.scaled(int(self.img.height() * self.ratio), int(self.img.width() * self.ratio))
+        else:
+            scaled_img = scaled_img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
+
+        print(self.point)
+        return scaled_img
+
+    def rotate_image(self):
+        """
+        旋转之后，将上一个角度的平移量清零。
+        """
+        self.global_shift = QPoint()
+        self.point = QPoint()
+        self.angle_v = (self.angle_v + 90) % 360
+        self.scaled_img = self._filter()
         self.repaint()
