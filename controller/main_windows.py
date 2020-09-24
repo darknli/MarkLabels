@@ -103,6 +103,29 @@ class MainWindow(QMainWindow):
                     idx += 1
                 self.image2pts[image_path] = pts
 
+    def read_data(self, dirname, start_idx):
+        from glob import glob
+        from tools.megvii import read_anno
+        files = glob(join(dirname, "*.txt"))
+        files.sort()
+        files = files[start_idx:]
+
+        self.images = []
+        self.image2pts = {}
+
+        for file in files:
+            name_list = glob(file.strip(".txt")+"*")
+            print(join(file.strip(".txt"), "*"), name_list)
+            assert len(name_list) == 2
+            if name_list[0].endswith(".txt"):
+                image_name = name_list[1]
+            else:
+                image_name = name_list[0]
+            self.images.append(image_name)
+            landmark = read_anno(file)["landmark"]
+            self.image2pts[basename(image_name)] = np.array(landmark, dtype=float).reshape(-1, 2)
+        self.idx = start_idx
+
     def run(self):
         print(self.idx)
         if len(self.images) == 0:

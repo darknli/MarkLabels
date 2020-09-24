@@ -12,7 +12,7 @@ seleted_color = Qt.red
 
 
 class Keypoint(QLabel):
-    def __init__(self, parent, loc, upper_controller, idx_face, idx_points, w, h, visible=True):
+    def __init__(self, parent, loc, upper_controller, idx_points, w, h, visible=True):
         super().__init__(parent)
         self.backup_loc = loc
         self.precision_x = loc[0]
@@ -29,7 +29,6 @@ class Keypoint(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.visible = visible
         self.upper_controller = upper_controller
-        self.idx_face = idx_face
         self.idx_points = idx_points
         self.parent = parent
         self.move(int(self.precision_x + 0.5), int(self.precision_y + 0.5))
@@ -119,7 +118,7 @@ class Keypoint(QLabel):
     def mouseDoubleClickEvent(self, event):
         self.set_important_point(True)
         self.grabKeyboard()
-        self.upper_controller.notify_other_points_normal(self.idx_face, self.idx_points)
+        self.upper_controller.notify_other_points_normal(self.idx_points)
         self.move_controller.table_select_action(self.idx_points)
 
     def set_visible(self):
@@ -137,7 +136,7 @@ class Keypoint(QLabel):
 
     # 当该点被移动了，则对别的控件采取某些行动
     def after_move_action(self, controller):
-        controller.after_move_action(self.idx_face, self.idx_points)
+        controller.after_move_action(self.idx_points)
 
     def rescale_shift(self, scale, shift):
         self.scale = scale
@@ -172,57 +171,43 @@ class Keypoint(QLabel):
 class KeypointsCluster:
     def __init__(self, pts_list, prarent, w, h):
         self.pts = []
-        for idx_face, pts in enumerate(pts_list):
-            controller = []
-            for idx_point, (x, y) in enumerate(pts):
-                kp = Keypoint(prarent, (x, y), self, idx_face, idx_point, w, h)
-                kp.bind_point_move_controller(self)
-                controller.append(kp)
-                kp.show()
-            self.pts.append(controller)
-        self.highlight_idx_face = None
+        for idx_point, (x, y) in enumerate(pts_list):
+            kp = Keypoint(prarent, (x, y), self, idx_point, w, h)
+            kp.bind_point_move_controller(self)
+            self.pts.append(kp)
+            kp.show()
         self.highlight_idx_point = None
 
-    def set_high_light_point(self, idx_face, idx_points):
-        self.highlight_idx_face = idx_face
+    def set_high_light_point(self, idx_points):
         self.highlight_idx_point = idx_points
-        for f_idx, pts in enumerate(self.pts):
-            is_face = f_idx == idx_face
-            for i, pt in enumerate(pts):
-                if is_face and i == idx_points:
-                    self.pts[0][i].mouseDoubleClickEvent(None)
-                else:
-                    self.pts[0][i].set_important_point(False)
+        for i, pt in enumerate(self.pts):
+            if i == idx_points:
+                self.pts[i].mouseDoubleClickEvent(None)
+            else:
+                self.pts[i].set_important_point(False)
 
-    def notify_other_points_normal(self, idx_face, idx_points):
-        self.highlight_idx_face = idx_face
+    def notify_other_points_normal(self, idx_points):
         self.highlight_idx_point = idx_points
-        for f_idx, pts in enumerate(self.pts):
-            is_face = f_idx == idx_face
-            for i, pt in enumerate(pts):
-                if is_face and i != idx_points:
-                    self.pts[0][i].set_important_point(False)
+        for i, pt in enumerate(self.pts):
+            if i != idx_points:
+                self.pts[i].set_important_point(False)
 
     def release_keyboard(self):
         if self.highlight_idx_point is not None:
-            idx_face = self.highlight_idx_face
-            idx_point = self.highlight_idx_point
-            self.highlight_idx_face = None
+            self.pts[self.highlight_idx_point].set_important_point(False)
+            self.pts[self.highlight_idx_point].releaseKeyboard()
             self.highlight_idx_point = None
-            self.pts[idx_face][idx_point].set_important_point(False)
-            self.pts[idx_face][idx_point].releaseKeyboard()
 
     def get_points_str(self):
         points_str_list = []
-        for pts_controller in self.pts:
-            points_str = " ".join(
-                ["%.6f %.6f %d" % (pt.precision_x, pt.precision_y, pt.visible) for pt in pts_controller])
-            points_str_list.append(points_str)
+        points_str = " ".join(
+            ["%.6f %.6f %d" % (pt.precision_x, pt.precision_y, pt.visible) for pt in self.pts])
+        points_str_list.append(points_str)
         return points_str_list
 
-    def change_location(self, idx_face, idx_point, xory, v):
+    def change_location(self, idx_point, xory, v):
         # 是x值
-        pt = self.pts[idx_face][idx_point]
+        pt = self.pts[idx_point]
         if xory:
             if v != "%.2f" % pt.precision_x:
                 pt.relative_move(float(v), pt.precision_y)
@@ -231,27 +216,26 @@ class KeypointsCluster:
                 pt.relative_move(pt.precision_x, float(v))
 
     def scale_loc(self, scale, shift):
-        for pts in self.pts:
-            for pt in pts:
-                pt.rescale_shift(scale, shift)
+        for pt in self.pts:
+            pt.rescale_shift(scale, shift)
 
     # 捆绑控件，当有点移动时，该控件也会跟着起行动
     def bind_point_move_controller(self, move_controller):
         self.move_controller = move_controller
 
-    def after_move_action(self, idx_face, idx_point):
-        self.move_controller.after_move_action(idx_face, idx_point)
+    def after_move_action(self, idx_point):
+        self.move_controller.after_move_action(idx_point)
 
     def table_select_action(self, row):
         self.move_controller.select_table_line(row)
 
     def show_number(self, flag):
-        for pt in self.pts[0]:
+        for pt in self.pts:
             pt.set_label(flag)
             pt.repaint()
 
     def rotate90(self):
-        for pt in self.pts[0]:
+        for pt in self.pts:
             pt.rotate90()
 
 class KeyPointTable:
@@ -259,13 +243,13 @@ class KeyPointTable:
         font = QFont()
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
-        rows = len(kp_cluster.pts[0])
+        rows = len(kp_cluster.pts)
         self.kp_tabel = BulkIndexTabelWidget(rows, 5, 19, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)
         self.backup_kp = []
-        for i, kp in enumerate(kp_cluster.pts[0]):
+        for i, kp in enumerate(kp_cluster.pts):
             self.backup_kp.append(("%.2f" % kp.precision_x, "%.2f" % kp.precision_y))
             visible_btn = QPushButton("Yes" if kp.visible else "No")
             visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn))
@@ -288,7 +272,7 @@ class KeyPointTable:
 
     def click_cell(self, row, col):
         real_row = int(self.kp_tabel.item(row, 0).text())
-        self._highlight(self.kp_cluster.pts[0][real_row])
+        self._highlight(self.kp_cluster.pts[real_row])
         if col == 1 or col == 2:
             self.kp_cluster.release_keyboard()
         elif col == 4:
@@ -308,7 +292,7 @@ class KeyPointTable:
         value = self.kp_tabel.item(row, col).text()
         if value != self.backup_kp[real_row][col == 2]:
             self.kp_tabel.item(row, 4).setText("Yes")
-        self.kp_cluster.change_location(0, real_row, col == 1, value)
+        self.kp_cluster.change_location(real_row, col == 1, value)
 
     def move(self, x, y):
         self.kp_tabel.move(x, y)
@@ -321,8 +305,8 @@ class KeyPointTable:
         btn.repaint()
         kp.set_visible()
 
-    def after_move_action(self, idx_face, idx_point):
-        pt = self.kp_cluster.pts[idx_face][idx_point]
+    def after_move_action(self, idx_point):
+        pt = self.kp_cluster.pts[idx_point]
         x = "%.2f" % pt.precision_x
         y = "%.2f" % pt.precision_y
         self.kp_tabel.item(idx_point, 1).setText(x)
