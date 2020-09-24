@@ -4,11 +4,12 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QFont
 from functools import partial
 
-AGE = ["婴儿(0-4)", "儿童(5-18)", "青年(19-30)", "中老年(31-150)", "未知"]
+# AGE = ["婴儿(0-4)", "儿童(5-18)", "青年(19-30)", "中老年(31-150)", "未知"]
+AGE = ['(0, 2)', '(4, 6)', '(8, 12)', '(15, 20)', '(25, 32)', '(38, 43)', '(48, 53)', '(60, 100)']
 # AGE = ["0-4", "5-18", "19-30", "30-150", "未知"]
 RACE = ["黄", "白", "黑", "未知"]
 GENDER = ["男", "女", "未知"]
-EXPRESSION = ["无", "开心", "愤怒", "悲伤", "未知"]
+EXPRESSION = ["无", "笑", "愤怒", "哭", "未知"]
 
 class Selector(QWidget):
     def __init__(self, name, values, parent):
@@ -21,7 +22,7 @@ class Selector(QWidget):
         for i, v in enumerate(values):
             height_b = 25
 
-            num_lines = len(v) // 3 + 1
+            num_lines = len(v) // 10 + 1
             if num_lines > 1:
                 v = list(v)
                 v = "\n".join(["".join(v[s:s+3]) for s in range(0, len(v), 3)])
@@ -29,7 +30,7 @@ class Selector(QWidget):
             else:
                 cb = QCheckBox(v, self)
             cb.move(0, span)
-            cb.resize(50, height_b * num_lines)
+            cb.resize(80, height_b * num_lines)
             span += height_b * num_lines
             if v == "未知":
                 self.unknow_box_idx = i
@@ -72,6 +73,12 @@ class Selector(QWidget):
         for i, c in enumerate(self.check_boxes):
             c.stateChanged.connect(partial(self.set_unknow, i))
 
+    def set_selected_value(self, value):
+        for i, v in enumerate(self.values):
+            if v == value:
+                self.check_boxes[i].setChecked(True)
+                self.set_unknow(i)
+                break
 
 
 class Labels:
@@ -120,6 +127,11 @@ class Labels:
         results["gender"] = self.gender.get_selected_value()
         results["expression"] = self.expression.get_selected_value()
         return results
+
+    def set_label(self, attr_name, attr_value):
+        if hasattr(self, attr_name):
+            print(attr_name, attr_value)
+            getattr(self, attr_name).set_selected_value(attr_value)
 
 from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt

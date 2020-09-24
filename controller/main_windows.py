@@ -112,6 +112,7 @@ class MainWindow(QMainWindow):
 
         self.images = []
         self.image2pts = {}
+        self.face_attr = {}
 
         for file in files:
             name_list = glob(file.strip(".txt")+"*")
@@ -122,8 +123,11 @@ class MainWindow(QMainWindow):
             else:
                 image_name = name_list[0]
             self.images.append(image_name)
-            landmark = read_anno(file)["landmark"]
-            self.image2pts[basename(image_name)] = np.array(landmark, dtype=float).reshape(-1, 2)
+            anno = read_anno(file)
+            landmark = anno["landmark"]
+            key = basename(image_name)
+            self.image2pts[key] = np.array(landmark, dtype=float).reshape(-1, 2)
+            self.face_attr[key] = anno["attributes"]
         self.idx = start_idx
 
     def run(self):
@@ -169,6 +173,8 @@ class MainWindow(QMainWindow):
 
         self.face_label = Labels(self)
         self.face_label.move(880, 45)
+        for name, value in self.face_attr[image_name].items():
+            self.face_label.set_label(name, value)
 
     def next(self):
         # self._save_keypoints(self.idx, True)
@@ -219,14 +225,6 @@ class MainWindow(QMainWindow):
         self.save_dir = dir
         if not path.exists(dir):
             makedirs(dir)
-
-    def set_important_point(self, idx):
-        print(idx)
-        for i, pt in enumerate(self.pts[0]):
-            if i == idx:
-                self.pts[0][i].mouseDoubleClickEvent(None)
-            else:
-                self.pts[0][i].set_important_point(False)
 
     def update_message_status(self):
         self.status.showMessage("{}, {}x{}, ratio={:.1f}".format(

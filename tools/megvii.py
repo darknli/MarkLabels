@@ -1,5 +1,15 @@
 from json import loads
 import numpy as np
+from controller.data_labels import AGE
+
+def convert_age_label(value):
+    for age in AGE:
+        age_span = eval(age)
+        if not isinstance(age_span, tuple):
+            break
+        if value < age_span[1]:
+            return age
+    return "未标"
 
 def read_anno(file):
     with open(file) as f:
@@ -14,6 +24,23 @@ def read_anno(file):
             new_landmark.append(x)
             new_landmark.append(y)
         j["landmark"] = new_landmark
+        attr = j["attributes"]
+        gender = attr["gender"]["value"]
+        if gender == "Male":
+            gender = "男"
+        else:
+            gender = "女"
+        attr["gender"] = gender
+
+        age = attr["age"]["value"]
+        age = convert_age_label(int(age))
+        attr["age"] = age
+
+        smile = attr["smile"]
+        expression = "笑" if int(smile["value"]) > int(smile["threshold"]) else "未标"
+        del attr["smile"]
+        attr["expression"] = expression
+
     return json[0]
 
 def view_landmark(file):
