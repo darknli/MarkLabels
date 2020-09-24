@@ -293,8 +293,9 @@ class KeyPointTable:
             self.kp_cluster.release_keyboard()
         elif col == 4:
             if self.kp_tabel.item(row, col).text() == "Yes":
-                self.kp_tabel.item(row, 1).setText(self.backup_kp[row][0])
-                self.kp_tabel.item(row, 2).setText(self.backup_kp[row][1])
+                real_row = int(self.kp_tabel.item(row, 0).text())
+                self.kp_tabel.item(row, 1).setText(self.backup_kp[real_row][0])
+                self.kp_tabel.item(row, 2).setText(self.backup_kp[real_row][1])
                 self.kp_tabel.item(row, 4).setText("No")
 
     def select_table_line(self, row):

@@ -113,7 +113,6 @@ class TableWidget(QWidget):
         self.repaint()
 
     def change_table_content(self):
-        print("run")
         """根据当前页改变表格的内容"""
         cur_page = self.curPage.text()
         self.now_idx_page = int(cur_page) - 1

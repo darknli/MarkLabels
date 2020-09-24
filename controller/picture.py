@@ -113,7 +113,6 @@ class ImageController(QLabel):
         else:
             scaled_img = scaled_img.scaled(int(self.img.width() * self.ratio), int(self.img.height() * self.ratio))
 
-        print(self.point)
         return scaled_img
 
     def rotate_image(self):
