@@ -1,6 +1,7 @@
 from json import loads
 import numpy as np
 from controller.data_labels import AGE
+from tools.point2idx import points_list
 
 def convert_age_label(value):
     for age in AGE:
@@ -18,7 +19,8 @@ def read_anno(file):
     for j in json:
         landmark = j["landmark"]
         new_landmark = []
-        for k, loc in landmark.items():
+        for k in points_list:
+            loc = landmark[k]
             x = loc["x"]
             y = loc["y"]
             new_landmark.append(x)
@@ -41,7 +43,7 @@ def read_anno(file):
         del attr["smile"]
         attr["expression"] = expression
 
-    return json[0]
+    return json
 
 def view_landmark(file):
     import cv2
@@ -50,7 +52,6 @@ def view_landmark(file):
     landmark = read_anno(anno)["landmark"]
     image = cv2.imread(file)
     landmark = np.array(landmark, dtype=float).reshape(-1, 2).astype(int)
-    print(len(landmark))
     for x, y in landmark:
         cv2.circle(image, (x, y), 1, (0, 255, 0), 1, cv2.LINE_4)
     image = cv2.resize(image, (600, 600))

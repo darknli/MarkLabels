@@ -7,7 +7,9 @@ from functools import partial
 # AGE = ["婴儿(0-4)", "儿童(5-18)", "青年(19-30)", "中老年(31-150)", "未知"]
 AGE = ['(0, 2)', '(4, 6)', '(8, 12)', '(15, 20)', '(25, 32)', '(38, 43)', '(48, 53)', '(60, 100)']
 # AGE = ["0-4", "5-18", "19-30", "30-150", "未知"]
-RACE = ["黄", "白", "黑", "未知"]
+RACE = ["黄", "白", "黑", "棕", "未知"]
+ILLUMINATION = ["有", "无", "未知"]
+POSITION = ["有", "无", "未知"]
 GENDER = ["男", "女", "未知"]
 EXPRESSION = ["无", "笑", "愤怒", "哭", "未知"]
 
@@ -86,20 +88,28 @@ class Labels:
         self.panel = QWidget(parent)
         self.panel.resize(600, 600)
 
-        self.race = Selector("肤色", RACE.copy(), self.panel)
-        self.race.move(60, 0)
-        self.race.resize(60, 600)
-
         self.gender = Selector("性别", GENDER.copy(), self.panel)
-        self.gender.move(0, 0)
+        self.gender.move(0, 20)
         self.gender.resize(60, 600)
 
+        self.illumination = Selector("光照", ILLUMINATION.copy(), self.panel)
+        self.illumination.move(60, 20)
+        self.illumination.resize(60, 600)
+
+        self.position = Selector("姿态", POSITION.copy(), self.panel)
+        self.position.move(120, 20)
+        self.position.resize(60, 600)
+
+        self.race = Selector("肤色", RACE.copy(), self.panel)
+        self.race.move(180, 20)
+        self.race.resize(60, 600)
+
         self.expression = Selector("表情", EXPRESSION.copy(), self.panel)
-        self.expression.move(120, 0)
+        self.expression.move(240, 20)
         self.expression.resize(60, 600)
 
         self.age = Selector("年龄", AGE.copy(), self.panel)
-        self.age.move(180, 0)
+        self.age.move(300, 20)
         self.age.resize(60, 600)
         self.panel.show()
 
@@ -130,7 +140,6 @@ class Labels:
 
     def set_label(self, attr_name, attr_value):
         if hasattr(self, attr_name):
-            print(attr_name, attr_value)
             getattr(self, attr_name).set_selected_value(attr_value)
 
 from PyQt5.QtWidgets import QWidget, QCheckBox, QApplication, QPushButton, QMessageBox

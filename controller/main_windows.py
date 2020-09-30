@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QDesktopWidget, QShortcut,
-    QWidget, QPushButton, QFrame
+    QWidget, QPushButton, QFrame, QMessageBox
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QKeySequence, QPalette, QFont
@@ -8,8 +8,10 @@ import numpy as np
 from controller.key_points import KeyPointTable, KeypointsCluster
 from controller.picture import ImageController
 from controller.data_labels import Labels
-from os.path import join, basename
+from os.path import join, basename, exists
 from controller.slider import MySlide
+from controller.message_box import MyMessageBox
+import cv2
 import sip
 
 def move2center(self):
@@ -72,6 +74,31 @@ class MainWindow(QMainWindow):
         self.rotate_button.move(860, 5)
         self.rotate_button.clicked.connect(self._clicked_rotate_btn)
 
+        self.view_button = QPushButton("查看全貌", self)
+        self.view_button.setFont(font)
+        self.view_button.resize(65, 30)
+        self.view_button.move(885, 0)
+        self.view_button.clicked.connect(self._clicked_view_btn)
+
+        self.before_button = QPushButton("上一个", self)
+        self.before_button.setFont(font)
+        self.before_button.resize(55, 30)
+        self.before_button.move(950, 0)
+        self.before_button.clicked.connect(self.check_before)
+        self.before_button.show()
+
+        self.next_button = QPushButton("下一个", self)
+        self.next_button.setFont(font)
+        self.next_button.resize(55, 30)
+        self.next_button.move(1000, 0)
+        self.next_button.clicked.connect(self.check_next)
+        self.next_button.show()
+
+        self.next_message = MyMessageBox("还没保存，确定下一个？", self.next)
+        self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
+
+        self.can_check = True
+
     def read_dir_images(self, dirname="./", start_idx=0):
         from glob import glob
         files = glob(join(dirname, "*"))
@@ -106,32 +133,41 @@ class MainWindow(QMainWindow):
     def read_data(self, dirname, start_idx):
         from glob import glob
         from tools.megvii import read_anno
-        files = glob(join(dirname, "*.txt"))
+        files = glob(join(dirname, "*.json"))
         files.sort()
-        files = files[start_idx:]
+        # files = files[start_idx:]
 
         self.images = []
         self.image2pts = {}
         self.face_attr = {}
 
         for file in files:
-            name_list = glob(file.strip(".txt")+"*")
-            print(join(file.strip(".txt"), "*"), name_list)
-            assert len(name_list) == 2
-            if name_list[0].endswith(".txt"):
+            name_list = glob(file.replace("_106.json", "")+"*")
+            assert len(name_list) == 2, "{}".format(file)
+            if name_list[0].endswith("_106.json"):
                 image_name = name_list[1]
             else:
                 image_name = name_list[0]
+            try:
+                anno = read_anno(file)
+            except BaseException:
+                continue
             self.images.append(image_name)
-            anno = read_anno(file)
-            landmark = anno["landmark"]
-            key = basename(image_name)
-            self.image2pts[key] = np.array(landmark, dtype=float).reshape(-1, 2)
-            self.face_attr[key] = anno["attributes"]
+            landmark_list = []
+            attr_list = []
+            for single_face in anno:
+                landmark = single_face["landmark"]
+                key = basename(image_name)
+                landmark_list.append(np.array(landmark, dtype=float).reshape(-1, 2))
+                attr_list.append(single_face["attributes"])
+            self.image2pts[key] = landmark_list
+            self.face_attr[key] = attr_list
         self.idx = start_idx
+        self.face_idx = 0
 
     def run(self):
-        print(self.idx)
+        if not self.can_check:
+            self._clicked_view_btn()
         if len(self.images) == 0:
             print("空")
             return
@@ -143,6 +179,7 @@ class MainWindow(QMainWindow):
             del self.kp_cluster
             del self.kp_tabel
         self.file = self.images[self.idx]
+        print(self.idx, self.file)
         self.image_label = ImageController(self.file, self.sub_window)
         self.image_label.show()
         self.image_label.move(0, 0)
@@ -161,7 +198,7 @@ class MainWindow(QMainWindow):
             self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
 
         image_name = basename(self.file)
-        pts_list = self.image2pts[image_name]
+        pts_list = self.image2pts[image_name][self.face_idx]
 
         w, h = self.image_label.image_size()
         self.kp_cluster = KeypointsCluster(pts_list, self.image_label, w, h)
@@ -169,21 +206,34 @@ class MainWindow(QMainWindow):
         self.image_label.bind_show(self.update_message_status)
 
         self.kp_tabel = KeyPointTable(self.kp_cluster, self)
-        self.kp_tabel.move(650, 25)
+        self.kp_tabel.move(680, 25)
 
         self.face_label = Labels(self)
         self.face_label.move(880, 45)
-        for name, value in self.face_attr[image_name].items():
+        for name, value in self.face_attr[image_name][self.face_idx].items():
             self.face_label.set_label(name, value)
 
+    def check_next(self):
+        anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[self.idx]).rsplit(".")[0], self.face_idx))
+        if not exists(anno):
+            self.next_message.setWindowModality(Qt.ApplicationModal)
+            self.next_message.show()
+        else:
+            self.next()
+
     def next(self):
-        # self._save_keypoints(self.idx, True)
+        self.face_idx += 1
+        if self.face_idx < len(self.face_attr[basename(self.file)]):
+            self.run()
+            return
+        else:
+            self.face_idx = 0
         self.idx += 1
         self.idx = min(len(self.images) - 1, self.idx)
         self.run()
 
     def _save_keypoints(self, idx, del_pts=False):
-        anno = join("{}/{}.pts".format(self.save_dir, basename(self.images[idx]).rsplit(".")[0]))
+        anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[idx]).rsplit(".")[0], self.face_idx))
         with open(anno, "w") as f:
             f.write("{}\n".format(self.images[idx]))
             results = self.kp_cluster.get_points_str()
@@ -205,6 +255,42 @@ class MainWindow(QMainWindow):
             self.show_number.setText("显示编号")
             self.kp_cluster.show_number(False)
 
+    def _clicked_view_btn(self):
+        if self.can_check:
+            self.view_button.setText("关闭窗口")
+            self.view_button.repaint()
+            self.can_check = False
+        else:
+            cv2.destroyWindow("check")
+            self.view_button.setText("查看全貌")
+            self.view_button.repaint()
+            self.can_check = True
+            return
+        image = cv2.imread(self.file)
+        pts = self.kp_cluster.get_points_str()[0].split(" ")
+        pts = np.array(pts).reshape(-1, 3).astype(float).astype(int)
+        x1 = image.shape[1]
+        y1 = image.shape[0]
+        x2 = 0
+        y2 = 0
+        for pt in pts:
+            x, y, v = pt
+            if v == 0:
+                cv2.circle(image, (round(x), round(y)), 1, (255, 0, 0), 1)
+            else:
+                cv2.circle(image, (round(x), round(y)), 1, (0, 255, 0), 1)
+            x1 = min(x1, x)
+            x2 = max(x2, x)
+            y1 = min(y1, y)
+            y2 = max(y2, y)
+        x1 = max(x1 - 10, 0)
+        y1 = max(y1 - 10, 0)
+        x2 = min(x2 + 10, image.shape[1])
+        y2 = min(y2 + 10, image.shape[0])
+        image = image[y1:y2, x1: x2, :]
+        cv2.imshow("check", image)
+        cv2.waitKey()
+
     def _clicked_rotate_btn(self):
         self.image_label.rotate_image()
         self.kp_cluster.rotate90()
@@ -215,7 +301,22 @@ class MainWindow(QMainWindow):
     def _clicked_withdraw_btn(self):
         self.kp_tabel.reset_point()
 
+    def check_before(self):
+        anno = join(
+            "{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[self.idx]).rsplit(".")[0], self.face_idx))
+        if not exists(anno):
+            self.before_message.setWindowModality(Qt.ApplicationModal)
+            self.before_message.show()
+        else:
+            self.before()
+
     def before(self):
+        self.face_idx -= 1
+        if self.face_idx >= 0:
+            self.run()
+            return
+        else:
+            self.face_idx = 0
         self.idx -= 1
         self.idx = max(0, self.idx)
         self.run()
