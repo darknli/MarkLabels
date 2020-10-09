@@ -32,15 +32,17 @@ class MyMessageBox(QWidget):
         self.vbox.addWidget(self.txt)
         self.vbox.addLayout(self.hbox)
         self.setLayout(self.vbox)
-        self.resize(120, 30)
+        self.resize(300, 50)
 
     def _click_yes(self):
+        self.setWindowModality(Qt.NonModal)
         self.hide()
         if self.yes_action is not None:
             self.yes_action()
 
     def _click_no(self):
         self.hide()
+        self.setWindowModality(Qt.NonModal)
         if self.no_action is not None:
             self.no_action()
 

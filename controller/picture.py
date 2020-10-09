@@ -77,9 +77,9 @@ class ImageController(QLabel):
         cpoint = QPoint(e.x(), e.y())
         last_ratio = self.ratio
         if e.angleDelta().y() > 0:
-            self.ratio = min(self.ratio + 0.1, MAX_SCALE)
+            self.ratio = min(self.ratio + 1, MAX_SCALE)
         elif e.angleDelta().y() < 0:
-            self.ratio = max(self.ratio - 0.1, MIN_SCALE)
+            self.ratio = max(self.ratio - 1, MIN_SCALE)
         self.scaled_img = self._filter()
         self.point = cpoint - (cpoint - self.point) * self.ratio / last_ratio
         self.global_shift = self.point / self.ratio

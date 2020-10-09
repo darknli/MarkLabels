@@ -2,7 +2,7 @@ from controller.main_windows import MainWindow
 from PyQt5.QtWidgets import QApplication
 
 # 开始索引
-start_idx = 80
+start_idx = 132
 
 
 if __name__ == '__main__':
