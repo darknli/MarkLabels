@@ -216,8 +216,8 @@ class MainWindow(QMainWindow):
     def check_next(self):
         anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[self.idx]).rsplit(".")[0], self.face_idx))
         if not exists(anno):
-            print("没保存过")
-            self.next_message.setWindowModality(Qt.ApplicationModal)
+            # print("没保存过")
+            # self.next_message.setWindowModality(Qt.ApplicationModal)
             self.next_message.show()
         else:
             self.next()
@@ -306,7 +306,7 @@ class MainWindow(QMainWindow):
         anno = join(
             "{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[self.idx]).rsplit(".")[0], self.face_idx))
         if not exists(anno):
-            self.before_message.setWindowModality(Qt.ApplicationModal)
+            # self.before_message.setWindowModality(Qt.ApplicationModal)
             self.before_message.show()
         else:
             self.before()

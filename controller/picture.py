@@ -5,6 +5,7 @@ from PyQt5.QtGui import QPalette, QKeySequence, QPixmap, QPainter
 from controller.utils import Rotator
 from functools import partial
 from PIL import ImageQt, ImageEnhance, Image
+import numpy as np
 
 MAX_SCALE = 10
 MIN_SCALE = 1
@@ -25,7 +26,7 @@ class ImageController(QLabel):
         self.global_shift = LEFT_POINT
         self.ratio = 1.0
         self.kp_move = None
-        self.brightness_v = 1
+        self.brightness_v = 0
         self.angle_v = 0
 
     def image_size(self):
@@ -97,14 +98,21 @@ class ImageController(QLabel):
         self.kp_move = rescale_shift
 
     def adjust_brightness(self, value):
-        self.brightness_v = (value + 10) / 10
+        self.brightness_v = value
         self.scaled_img = self._filter()
         self.repaint()
         
     def _filter(self):
         image = ImageQt.fromqpixmap(self.img)
-        image = ImageEnhance.Brightness(image)
-        image = image.enhance(self.brightness_v)
+        # image = ImageEnhance.Brightness(image)
+        # image = image.enhance(self.brightness_v)
+        v = int(self.brightness_v * 10)
+        if v != 0:
+            image = np.array(image, dtype=int)
+            print(int(self.brightness_v * 10))
+            image += v
+            image = np.clip(image, 0, 255)
+            image = Image.fromarray(np.uint8(image))
         if self.angle_v != 0:
             image = image.transpose(getattr(Image, "ROTATE_{}".format(self.angle_v)))
         scaled_img = ImageQt.toqpixmap(image)
