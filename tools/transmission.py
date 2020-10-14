@@ -2,6 +2,9 @@ import requests
 import os
 import hashlib
 import json
+import re
+from glob import glob
+import zipfile
 
 UPLOAD_URL = "http://yangjianli.box.ushow.media:91/face_annotation/face-annotation/upload-one"
 REQUEST_URL = "http://yangjianli.box.ushow.media:91/face_annotation/face-annotation/request-one"
@@ -22,7 +25,7 @@ class Downloader:
         if not os.path.exists(DOWNLOAD_DIRECTORY):
             os.makedirs(DOWNLOAD_DIRECTORY)
 
-        md5 = hashlib.md5(result["img_url"].encode()).hexdigest()
+        md5 = hashlib.md5(re.findall(r"face_annotation%2F(.+?).png", result["img_url"])[0].encode()).hexdigest()
         image = os.path.join(DOWNLOAD_DIRECTORY, "{}.jpg".format(md5))
         anno = os.path.join(DOWNLOAD_DIRECTORY, "{}.json".format(md5))
 
@@ -46,6 +49,8 @@ class Downloader:
 
     def download(self, url, dst):
         try:
+            if os.path.exists(dst):
+                return True
             r = requests.get(url)
             with open(dst, 'wb') as f:
                 f.write(r.content)
@@ -70,7 +75,13 @@ class Uploader:
         return result
 
 class DataManager:
-    def __init__(self, name):
+    def __init__(self, name=None):
+        if name is None:
+            from controller.login import CACHE_DIR
+            with open(os.path.join(CACHE_DIR, "user_info.txt")) as f:
+                lines = f.readlines()
+                name = lines[0].strip()
+                password = lines[1].strip()
         self.downloader = Downloader(name)
         self.uploader = Uploader(name)
         self.image = None
@@ -83,9 +94,24 @@ class DataManager:
             self.anno = result["anno"]
         else:
             raise ValueError("下载失败！检查输入参数是否正确")
+        return self.image, self.anno
 
     def upload_data(self):
-        result = self.uploader.run(self.image, self.anno, 1)
+        if self.image is not None and self.anno is not None:
+            filename = os.path.basename(self.image).split(".")[0]
+            anno_list = glob(os.path.join(ANNOTATION_DIRECTORY, "{}*.pts".format(filename)))
+            f = zipfile.ZipFile('upload_tmp_anno_data.zip', 'w', zipfile.ZIP_DEFLATED)
+            for anno in anno_list:
+                f.write(anno)
+            f.close()
+            result = self.uploader.run(self.image, self.anno, len(anno_list))
+            os.remove('upload_tmp_anno_data.zip')
+            if result["err"] == "ok":
+                return True
+            else:
+                return False
+        else:
+            return False
 
 
 def post_one(url, post_data, files=None):
@@ -112,8 +138,8 @@ def test_upload():
 
 
 if __name__ == "__main__":
-    # d = Downloader("yangjianli")
-    # print(d.run())
+    d = Downloader("yangjianli")
+    print(d.run())
     u = Uploader("yangjianli")
     s = u.run("dataset/480ec494452237bbb6052a2484404026.jpg",
           "dataset/480ec494452237bbb6052a2484404026.json", 1)

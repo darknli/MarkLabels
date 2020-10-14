@@ -11,9 +11,12 @@ from controller.data_labels import Labels
 from os.path import join, basename, exists
 from controller.slider import MySlide
 from controller.message_box import MyMessageBox
+from tools.megvii import read_anno
 import cv2
 from controller.login import LoginWindow
+from tools.transmission import DataManager
 import sip
+from glob import glob
 
 def move2center(self):
     screen_size = QDesktopWidget().screenGeometry()
@@ -36,6 +39,8 @@ class MainWindow(QMainWindow):
         move2center(self)
         QShortcut(QKeySequence(self.tr("b")), self, self.before)
         QShortcut(QKeySequence(self.tr("n")), self, self.next)
+
+        self.manager = DataManager()
 
         self.sub_window = QWidget(self)
         self.sub_window.resize(640, 640)
@@ -95,86 +100,39 @@ class MainWindow(QMainWindow):
         self.next_button.clicked.connect(self.check_next)
         self.next_button.show()
 
+        self.upload_button = QPushButton("上传", self)
+        self.upload_button.setFont(font)
+        self.upload_button.resize(55, 30)
+        self.upload_button.move(1050, 0)
+        self.upload_button.clicked.connect(self.check_upload)
+        self.upload_button.show()
+
         self.next_message = MyMessageBox("还没保存，确定下一个？", self.next)
         self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
+        self.upload_message = MyMessageBox("还没保存任何数据，确定上传？", self.upload)
 
         self.login_win = LoginWindow(self)
 
-
         self.can_check = True
+        self.face_idx = 0
 
-    def read_dir_images(self, dirname="./", start_idx=0):
-        from glob import glob
-        files = glob(join(dirname, "*"))
-        files.sort()
-        files = files[start_idx:]
-        self.images = []
-        for file in files:
-            if "png" in file or "jpg" in file or "jpeg" in file:
-                self.images.append(file)
-        self.idx = 0
+    def _get_manager(self):
+        self.manager = DataManager()
 
     def mouseDoubleClickEvent(self, event):
         self.grabKeyboard()
 
-    def read_labels(self, filename):
-        self.image2pts = {}
-        with open(filename) as f:
-            lines = f.readlines()
-            idx = 0
-            while idx < len(lines):
-                image_path = lines[idx].strip()
-                pts = []
-                idx += 1
-                num_face = lines[idx].strip()
-                idx += 1
-                for _ in range(int(num_face)):
-                    pt = np.array([float(pt) for pt in lines[idx].strip().split(" ")]).reshape(-1, 2)
-                    pts.append(pt)
-                    idx += 1
-                self.image2pts[image_path] = pts
-
-    def read_data(self, dirname, start_idx):
-        from glob import glob
-        from tools.megvii import read_anno
-        files = glob(join(dirname, "*.json"))
-        files.sort()
-        # files = files[start_idx:]
-
-        self.images = []
-        self.image2pts = {}
-        self.face_attr = {}
-
-        for file in files[100:200]:
-            name_list = glob(file.replace("_106.json", "")+"*")
-            assert len(name_list) == 2, "{}".format(file)
-            if name_list[0].endswith("_106.json"):
-                image_name = name_list[1]
-            else:
-                image_name = name_list[0]
-            try:
-                anno = read_anno(file)
-            except BaseException:
-                continue
-            self.images.append(image_name)
-            landmark_list = []
-            attr_list = []
-            for single_face in anno:
-                landmark = single_face["landmark"]
-                key = basename(image_name)
-                landmark_list.append(np.array(landmark, dtype=float).reshape(-1, 2))
-                attr_list.append(single_face["attributes"])
-            self.image2pts[key] = landmark_list
-            self.face_attr[key] = attr_list
-        self.idx = start_idx
-        self.face_idx = 0
-
     def run(self):
         if not self.can_check:
             self._clicked_view_btn()
-        if len(self.images) == 0:
-            print("空")
-            return
+        self.file, anno = self.manager.download_data()
+        anno = read_anno(anno)
+        self.landmark_list = []
+        self.attr_list = []
+        for single_face in anno:
+            landmark = single_face["landmark"]
+            self.landmark_list.append(np.array(landmark, dtype=float).reshape(-1, 2))
+            self.attr_list.append(single_face["attributes"])
         if hasattr(self, "image_label") and self.image_label is not None:
             # sip.delete(self.image_label)
             # del self.face_label
@@ -184,8 +142,6 @@ class MainWindow(QMainWindow):
             self._delete_controller(self.face_label)
             self._delete_controller(self.kp_cluster)
             self._delete_controller(self.kp_cluster)
-        self.file = self.images[self.idx]
-        print(self.idx, self.file)
         self.image_label = ImageController(self.file, self.sub_window)
         self.image_label.show()
         self.image_label.move(0, 0)
@@ -203,11 +159,8 @@ class MainWindow(QMainWindow):
         self.status.showMessage("{}, {}x{}, ratio={}".format(
             self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
 
-        image_name = basename(self.file)
-        pts_list = self.image2pts[image_name][self.face_idx]
-
         w, h = self.image_label.image_size()
-        self.kp_cluster = KeypointsCluster(pts_list, self.image_label, w, h)
+        self.kp_cluster = KeypointsCluster(self.landmark_list[self.face_idx], self.image_label, w, h)
         self.image_label.bind_keypoints_move(self.kp_cluster.scale_loc)
         self.image_label.bind_show(self.update_message_status)
 
@@ -216,11 +169,11 @@ class MainWindow(QMainWindow):
 
         self.face_label = Labels(self)
         self.face_label.move(880, 45)
-        for name, value in self.face_attr[image_name][self.face_idx].items():
+        for name, value in self.attr_list[self.face_idx].items():
             self.face_label.set_label(name, value)
 
     def check_next(self):
-        anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[self.idx]).rsplit(".")[0], self.face_idx))
+        anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.file).rsplit(".")[0], self.face_idx))
         if not exists(anno):
             # print("没保存过")
             # self.next_message.setWindowModality(Qt.ApplicationModal)
@@ -230,19 +183,17 @@ class MainWindow(QMainWindow):
 
     def next(self):
         self.face_idx += 1
-        if self.face_idx < len(self.face_attr[basename(self.file)]):
+        if self.face_idx < len(self.attr_list):
             self.run()
             return
         else:
             self.face_idx = 0
-        self.idx += 1
-        self.idx = min(len(self.images) - 1, self.idx)
         self.run()
 
-    def _save_keypoints(self, idx, del_pts=False):
-        anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[idx]).rsplit(".")[0], self.face_idx))
+    def _save_keypoints(self,):
+        anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.file).rsplit(".")[0], self.face_idx))
         with open(anno, "w") as f:
-            f.write("{}\n".format(self.images[idx]))
+            f.write("{}\n".format(self.file))
             results = self.kp_cluster.get_points_str()
             f.write("%d\n" % len(results))
             for result in results:
@@ -251,8 +202,20 @@ class MainWindow(QMainWindow):
             for name, value in results.items():
                 f.write("{}, {}\n".format(name, " ".join(value)))
 
+    def check_upload(self):
+        anno = join("{}/{}_*.pts".format(self.save_dir, basename(self.file).rsplit(".")[0]))
+        anno_files = glob(anno)
+        if len(anno_files) == 0:
+            self.upload_message.show()
+        else:
+            self.upload()
+
+    def upload(self):
+        self.manager.upload_data()
+        self.run()
+
     def _clicked_save_btn(self):
-        self._save_keypoints(self.idx, False)
+        self._save_keypoints()
 
     def _clicked_show_btn(self):
         if "显示编号" == self.show_number.text():
@@ -310,7 +273,7 @@ class MainWindow(QMainWindow):
 
     def check_before(self):
         anno = join(
-            "{}/{}_{:02d}.pts".format(self.save_dir, basename(self.images[self.idx]).rsplit(".")[0], self.face_idx))
+            "{}/{}_{:02d}.pts".format(self.save_dir, basename(self.file).rsplit(".")[0], self.face_idx))
         if not exists(anno):
             # self.before_message.setWindowModality(Qt.ApplicationModal)
             self.before_message.show()
@@ -324,8 +287,6 @@ class MainWindow(QMainWindow):
             return
         else:
             self.face_idx = 0
-        self.idx -= 1
-        self.idx = max(0, self.idx)
         self.run()
 
     def set_out_dir(self, dir):

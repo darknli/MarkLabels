@@ -52,7 +52,7 @@ class LoginWindow(QWidget):
             else:
                 return False
         d = Downloader(user_name)
-        if not d.run()["status"]:
+        if d.run()["status"]:
             return True
         else:
             return False
