@@ -109,7 +109,6 @@ class ImageController(QLabel):
         v = int(self.brightness_v * 10)
         if v != 0:
             image = np.array(image, dtype=int)
-            print(int(self.brightness_v * 10))
             image += v
             image = np.clip(image, 0, 255)
             image = Image.fromarray(np.uint8(image))

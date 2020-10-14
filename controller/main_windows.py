@@ -172,12 +172,14 @@ class MainWindow(QMainWindow):
             print("空")
             return
         if hasattr(self, "image_label") and self.image_label is not None:
-            sip.delete(self.image_label)
-            del self.face_label
-            # sip.delete(self.scroll)
-            # sip.delete(self.vbox)
-            del self.kp_cluster
-            del self.kp_tabel
+            # sip.delete(self.image_label)
+            # del self.face_label
+            # del self.kp_cluster
+            # del self.kp_tabel
+            self._delete_controller(self.image_label)
+            self._delete_controller(self.face_label)
+            self._delete_controller(self.kp_cluster)
+            self._delete_controller(self.kp_cluster)
         self.file = self.images[self.idx]
         print(self.idx, self.file)
         self.image_label = ImageController(self.file, self.sub_window)
@@ -206,7 +208,7 @@ class MainWindow(QMainWindow):
         self.image_label.bind_show(self.update_message_status)
 
         self.kp_tabel = KeyPointTable(self.kp_cluster, self)
-        self.kp_tabel.move(680, 25)
+        self.kp_tabel.move(640, 25)
 
         self.face_label = Labels(self)
         self.face_label.move(880, 45)
@@ -269,13 +271,13 @@ class MainWindow(QMainWindow):
             return
         image = cv2.imread(self.file)
         pts = self.kp_cluster.get_points_str()[0].split(" ")
-        pts = np.array(pts).reshape(-1, 3).astype(float).astype(int)
+        pts = np.array(pts).reshape(-1, 4).astype(float).astype(int)
         x1 = image.shape[1]
         y1 = image.shape[0]
         x2 = 0
         y2 = 0
         for pt in pts:
-            x, y, v = pt
+            x, y, v, c = pt
             if v == 0:
                 cv2.circle(image, (round(x), round(y)), 1, (255, 0, 0), 1)
             else:
@@ -331,3 +333,12 @@ class MainWindow(QMainWindow):
     def update_message_status(self):
         self.status.showMessage("{}, {}x{}, ratio={:.1f}".format(
             self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
+
+    def _delete_controller(self, controller):
+        if isinstance(controller, QWidget):
+            sip.delete(controller)
+        else:
+            for sub_con in dir(controller):
+                if isinstance(sub_con, QWidget):
+                    sip.delete(sub_con)
+            del controller

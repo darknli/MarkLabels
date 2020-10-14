@@ -129,6 +129,8 @@ class Labels:
         self.race.setFont(font)
         self.gender.setFont(font)
         self.expression.setFont(font)
+        self.illumination.setFont(font)
+        self.position.setFont(font)
 
     def get_labels(self):
         results = {}

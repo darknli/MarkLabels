@@ -12,7 +12,7 @@ seleted_color = Qt.red
 
 
 class Keypoint(QLabel):
-    def __init__(self, parent, loc, upper_controller, idx_points, w, h, visible=True):
+    def __init__(self, parent, loc, upper_controller, idx_points, w, h, visible=True, convinced=True):
         super().__init__(parent)
         self.backup_loc = loc
         self.precision_x = loc[0]
@@ -28,6 +28,7 @@ class Keypoint(QLabel):
         self.setPalette(palette)
         self.setAlignment(Qt.AlignCenter)
         self.visible = visible
+        self.convinced = convinced
         self.upper_controller = upper_controller
         self.idx_points = idx_points
         self.parent = parent
@@ -131,6 +132,9 @@ class Keypoint(QLabel):
         self.setPalette(palette)
         self.repaint()
 
+    def set_convinced(self, convinced=True):
+        self.convinced = convinced
+
     def bind_point_move_controller(self, move_controller):
         self.move_controller = move_controller
 
@@ -201,7 +205,7 @@ class KeypointsCluster:
     def get_points_str(self):
         points_str_list = []
         points_str = " ".join(
-            ["%.6f %.6f %d" % (pt.precision_x, pt.precision_y, pt.visible) for pt in self.pts])
+            ["%.6f %.6f %d %d" % (pt.precision_x, pt.precision_y, pt.visible, pt.convinced) for pt in self.pts])
         points_str_list.append(points_str)
         return points_str_list
 
@@ -244,30 +248,38 @@ class KeyPointTable:
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         rows = len(kp_cluster.pts)
-        self.kp_tabel = BulkIndexTabelWidget(rows, 5, 19, parent)
-        self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "改变"])
+        self.kp_tabel = BulkIndexTabelWidget(rows, 6, 19, parent)
+        self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "确定", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)
         self.backup_kp = []
         for i, kp in enumerate(kp_cluster.pts):
             self.backup_kp.append(("%.2f" % kp.precision_x, "%.2f" % kp.precision_y))
+
+            sure_btn = QPushButton("Yes" if kp.visible else "No")
+            sure_btn.clicked.connect(partial(self._set_convinced, kp, sure_btn))
+            sure_btn.setStyleSheet("border:none")
+            sure_btn.setFont(font)
+            sure_btn.setFlat(True)
+
             visible_btn = QPushButton("Yes" if kp.visible else "No")
-            visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn))
+            visible_btn.clicked.connect(partial(self._set_visible, kp, visible_btn, sure_btn))
             # visible_btn.resize(3, 3)
             visible_btn.setStyleSheet("border:none")
             visible_btn.setFont(font)
             visible_btn.setFlat(True)
-            # self.kp_tabel.setCellWidget(i, 0, btn)
+
             self.kp_tabel.setItem(i, 0, QTableWidgetItem(str(i)))
             self.kp_tabel.setItem(i, 1, QTableWidgetItem("%.2f" % kp.precision_x))
             self.kp_tabel.setItem(i, 2, QTableWidgetItem("%.2f" % kp.precision_y))
             self.kp_tabel.setCellWidget(i, 3, visible_btn)
-            self.kp_tabel.setItem(i, 4, QTableWidgetItem("No"))
+            self.kp_tabel.setCellWidget(i, 4, sure_btn)
+            self.kp_tabel.setItem(i, 5, QTableWidgetItem("No"))
         self.kp_tabel.load_data()
         self.kp_tabel.setFont(font)
         self.kp_tabel.cellChangedconnect(self.cell_change)
         self.kp_tabel.cellClickedconnect(self.click_cell)
-        self.kp_tabel.resize(320, 650)
+        self.kp_tabel.resize(400, 650)
         self.kp_tabel.show()
 
     def click_cell(self, row, col):
@@ -275,12 +287,12 @@ class KeyPointTable:
         self._highlight(self.kp_cluster.pts[real_row])
         if col == 1 or col == 2:
             self.kp_cluster.release_keyboard()
-        elif col == 4:
+        elif col == 5:
             if self.kp_tabel.item(row, col).text() == "Yes":
                 real_row = int(self.kp_tabel.item(row, 0).text())
                 self.kp_tabel.item(row, 1).setText(self.backup_kp[real_row][0])
                 self.kp_tabel.item(row, 2).setText(self.backup_kp[real_row][1])
-                self.kp_tabel.item(row, 4).setText("No")
+                self.kp_tabel.item(row, 5).setText("No")
 
     def select_table_line(self, row):
         self.kp_tabel.select(row)
@@ -291,7 +303,7 @@ class KeyPointTable:
         real_row = int(self.kp_tabel.item(row, 0).text())
         value = self.kp_tabel.item(row, col).text()
         if value != self.backup_kp[real_row][col == 2]:
-            self.kp_tabel.item(row, 4).setText("Yes")
+            self.kp_tabel.item(row, 5).setText("Yes")
         self.kp_cluster.change_location(real_row, col == 1, value)
 
     def move(self, x, y):
@@ -300,10 +312,19 @@ class KeyPointTable:
     def _highlight(self, kp):
         kp.mouseDoubleClickEvent(None)
 
-    def _set_visible(self, kp, btn):
+    def _set_visible(self, kp, btn, sure_btn):
         btn.setText("Yes" if btn.text() == "No" else "No")
         btn.repaint()
         kp.set_visible()
+        # 确定位置键也需要重新设置，逻辑是：如果不可见则默认不确定；如果可见默认确定
+        sure_btn.setText("No" if btn.text() == "No" else "Yes")
+        sure_btn.repaint()
+        kp.set_convinced(True if sure_btn.text() == "Yes" else False)
+
+    def _set_convinced(self, kp, btn):
+        btn.setText("Yes" if btn.text() == "No" else "No")
+        btn.repaint()
+        kp.set_convinced(True if btn.text() == "Yes" else False)
 
     def after_move_action(self, idx_point):
         pt = self.kp_cluster.pts[idx_point]
@@ -312,4 +333,4 @@ class KeyPointTable:
         self.kp_tabel.item(idx_point, 1).setText(x)
         self.kp_tabel.item(idx_point, 2).setText(y)
         if x == self.backup_kp[idx_point][0] and y == self.backup_kp[idx_point][1]:
-            self.kp_tabel.item(idx_point, 4).setText("No")
+            self.kp_tabel.item(idx_point, 5).setText("No")

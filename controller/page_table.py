@@ -232,8 +232,8 @@ class BulkIndexTabelWidget(QWidget):
                         table.setCellWidget(irow, icol, item)
             table.verticalHeader().hide()
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
-            table.move(10, 30)
-            table.resize(36 * self.cols, 600)
+            table.move(5, 30)
+            table.resize(37 * self.cols, 600)
             for i in range(table.columnCount()):
                 table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
             self.table_list.append(table)
@@ -270,7 +270,6 @@ class MainWindow(QMainWindow):
             for j in range(2):
                 self.t.setItem(i, j, QTableWidgetItem("{},{}".format(i, j)))
         self.t.load_data()
-        # self.t.table.resize(100, 300)
         self.t.resize(600, 400)
         font = QFont()
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
