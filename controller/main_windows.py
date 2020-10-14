@@ -12,6 +12,7 @@ from os.path import join, basename, exists
 from controller.slider import MySlide
 from controller.message_box import MyMessageBox
 import cv2
+from controller.login import LoginWindow
 import sip
 
 def move2center(self):
@@ -97,6 +98,9 @@ class MainWindow(QMainWindow):
         self.next_message = MyMessageBox("还没保存，确定下一个？", self.next)
         self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
 
+        self.login_win = LoginWindow(self)
+
+
         self.can_check = True
 
     def read_dir_images(self, dirname="./", start_idx=0):
@@ -141,7 +145,7 @@ class MainWindow(QMainWindow):
         self.image2pts = {}
         self.face_attr = {}
 
-        for file in files:
+        for file in files[100:200]:
             name_list = glob(file.replace("_106.json", "")+"*")
             assert len(name_list) == 2, "{}".format(file)
             if name_list[0].endswith("_106.json"):
