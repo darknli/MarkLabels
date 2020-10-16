@@ -46,6 +46,38 @@ class MyMessageBox(QWidget):
         if self.no_action is not None:
             self.no_action()
 
+class MySimpleMessageBox(QWidget):
+    def __init__(self, info):
+        super().__init__()
+        self.setWindowTitle("消息")
+        self.txt = QTextEdit(info)
+        self.txt.setReadOnly(True)
+        pl = self.txt.palette()
+        pl.setBrush(QPalette.Base, QBrush(QColor(255, 0, 0, 0)))
+        self.txt.setPalette(pl)
+
+        self.no_btn = QPushButton("确定")
+        self.no_btn.clicked.connect(self._clicked)
+
+        self.hbox = QHBoxLayout()
+        self.hbox.addStretch(1)
+        self.hbox.addWidget(self.no_btn)
+
+        self.vbox = QVBoxLayout()
+        self.vbox.addStretch(1)
+        self.vbox.addWidget(self.txt)
+        self.vbox.addLayout(self.hbox)
+        self.setLayout(self.vbox)
+        self.resize(200, 30)
+
+    def show_info(self, info):
+        self.txt.setText(info)
+        self.show()
+
+    def _clicked(self):
+        self.hide()
+        self.setWindowModality(Qt.NonModal)
+
 class mainW(QWidget):
     def __init__(self):
         super(mainW, self).__init__()

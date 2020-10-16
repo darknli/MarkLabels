@@ -10,7 +10,7 @@ from controller.picture import ImageController
 from controller.data_labels import Labels
 from os.path import join, basename, exists
 from controller.slider import MySlide
-from controller.message_box import MyMessageBox
+from controller.message_box import MyMessageBox, MySimpleMessageBox
 from tools.megvii import read_anno
 import cv2
 from controller.login import LoginWindow
@@ -110,6 +110,7 @@ class MainWindow(QMainWindow):
         self.next_message = MyMessageBox("还没保存，确定下一个？", self.next)
         self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
         self.upload_message = MyMessageBox("还没保存任何数据，确定上传？", self.upload)
+        self.upload_status_message = MySimpleMessageBox("还没保存任何数据，确定上传？")
 
         self.login_win = LoginWindow(self)
 
@@ -125,39 +126,30 @@ class MainWindow(QMainWindow):
     def run(self):
         if not self.can_check:
             self._clicked_view_btn()
-        self.file, anno = self.manager.download_data()
-        anno = read_anno(anno)
-        self.landmark_list = []
-        self.attr_list = []
-        for single_face in anno:
-            landmark = single_face["landmark"]
-            self.landmark_list.append(np.array(landmark, dtype=float).reshape(-1, 2))
-            self.attr_list.append(single_face["attributes"])
-        if hasattr(self, "image_label") and self.image_label is not None:
-            # sip.delete(self.image_label)
-            # del self.face_label
-            # del self.kp_cluster
-            # del self.kp_tabel
-            self._delete_controller(self.image_label)
-            self._delete_controller(self.face_label)
-            self._delete_controller(self.kp_cluster)
-            self._delete_controller(self.kp_cluster)
+        if self.face_idx == 0:
+            self.file, anno, self.face_num, self.total_face_num = self.manager.download_data()
+            anno = read_anno(anno)
+            self.landmark_list = []
+            self.attr_list = []
+            for single_face in anno:
+                landmark = single_face["landmark"]
+                self.landmark_list.append(np.array(landmark, dtype=float).reshape(-1, 2))
+                self.attr_list.append(single_face["attributes"])
+            if hasattr(self, "image_label") and self.image_label is not None:
+                self._delete_controller(self.image_label)
+                self._delete_controller(self.face_label)
+                self._delete_controller(self.kp_cluster)
+                self._delete_controller(self.kp_cluster)
         self.image_label = ImageController(self.file, self.sub_window)
         self.image_label.show()
         self.image_label.move(0, 0)
         self.image_label.setFrameShape(QFrame.NoFrame)
-        # 加滚动条
-        # self.scroll = QScrollArea()
-        # self.scroll.setFrameShape(QFrame.NoFrame)
-        # self.scroll.setWidget(self.image_label)
-        # self.vbox = QVBoxLayout()
-        # self.vbox.setContentsMargins(0, 0, 0, 0)
-        # self.vbox.addWidget(self.scroll)
-        # self.sub_window.setLayout(self.vbox)
         self.show_number.setText("显示编号")
         self.status = self.statusBar()
-        self.status.showMessage("{}, {}x{}, ratio={}".format(
-            self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
+        self.status.showMessage("{}, {}x{}, ratio={}, {}/{}张".format(
+            self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio,
+            self.face_num, self.total_face_num
+        ))
 
         w, h = self.image_label.image_size()
         self.kp_cluster = KeypointsCluster(self.landmark_list[self.face_idx], self.image_label, w, h)
@@ -205,14 +197,17 @@ class MainWindow(QMainWindow):
     def check_upload(self):
         anno = join("{}/{}_*.pts".format(self.save_dir, basename(self.file).rsplit(".")[0]))
         anno_files = glob(anno)
-        if len(anno_files) == 0:
+        if len(anno_files) == 0 or self.face_idx < len(self.landmark_list) - 1:
             self.upload_message.show()
         else:
             self.upload()
 
     def upload(self):
-        self.manager.upload_data()
-        self.run()
+        status = self.manager.upload_data()
+        self.upload_status_message.show_info("上传成功" if status else "上传失败")
+        if status:
+            self.face_idx = 0
+            self.run()
 
     def _clicked_save_btn(self):
         self._save_keypoints()
@@ -296,8 +291,10 @@ class MainWindow(QMainWindow):
             makedirs(dir)
 
     def update_message_status(self):
-        self.status.showMessage("{}, {}x{}, ratio={:.1f}".format(
-            self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio))
+        self.status.showMessage("{}, {}x{}, ratio={:.1f}, {}/{}张".format(
+            self.file, self.image_label.img.width(), self.image_label.img.height(), self.image_label.ratio,
+            self.face_num, self.total_face_num
+        ))
 
     def _delete_controller(self, controller):
         if isinstance(controller, QWidget):
