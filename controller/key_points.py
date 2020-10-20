@@ -146,8 +146,10 @@ class Keypoint(QLabel):
         self.scale = scale
         self.shift = shift
         fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
-        fact_x = round(scale * (fact_x + shift.x()))
-        fact_y = round(scale * (fact_y + shift.y()))
+        # fact_x = round(scale * (fact_x + shift.x()))
+        # fact_y = round(scale * (fact_y + shift.y()))
+        fact_x = round(scale * fact_x) + round(scale * shift.x())
+        fact_y = round(scale * fact_y) + round(scale * shift.y())
         self.move(fact_x, fact_y)
         self.label.move(fact_x, fact_y)
 
@@ -155,8 +157,10 @@ class Keypoint(QLabel):
         self.precision_x = x
         self.precision_y = y
         fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
-        fact_x = round(self.scale * (fact_x + self.shift.x()))
-        fact_y = round(self.scale * (fact_y + self.shift.y()))
+        # fact_x = round(self.scale * (fact_x + self.shift.x()))
+        # fact_y = round(self.scale * (fact_y + self.shift.y()))
+        fact_x = round(self.scale * fact_x) + round(self.scale * self.shift.x())
+        fact_y = round(self.scale * fact_y) + round(self.scale * self.shift.y())
         self.move(fact_x, fact_y)
         self.label.move(fact_x, fact_y)
 

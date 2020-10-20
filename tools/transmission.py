@@ -123,7 +123,11 @@ class DataManager:
 
 
 def post_one(url, post_data, files=None):
-    req = requests.post(url, post_data, files=files)
+    try:
+        req = requests.post(url, post_data, files=files)
+    except:
+        print("post失败，可能是没网")
+        return {"err": "ConnectionError"}
     txt = req.text
     try:
         txt = json.loads(txt)

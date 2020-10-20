@@ -248,10 +248,14 @@ class MainWindow(QMainWindow):
             x2 = max(x2, x)
             y1 = min(y1, y)
             y2 = max(y2, y)
-        x1 = max(x1 - 10, 0)
-        y1 = max(y1 - 10, 0)
-        x2 = min(x2 + 10, image.shape[1])
-        y2 = min(y2 + 10, image.shape[0])
+        w = x2 - x1
+        h = y2 - y1
+        expand_w = int(w * 0.1)
+        expand_h = int(h * 0.1)
+        x1 = max(x1 - expand_w, 0)
+        y1 = max(y1 - expand_h, 0)
+        x2 = min(x2 + expand_w, image.shape[1])
+        y2 = min(y2 + expand_h, image.shape[0])
         image = image[y1:y2, x1: x2, :]
         cv2.imshow("check", image)
         cv2.waitKey()
