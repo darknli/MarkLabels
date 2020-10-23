@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
 
         self.next_message = MyMessageBox("还没保存，确定下一个？", self.next)
         self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
-        self.upload_message = MyMessageBox("还没保存任何数据，确定上传？", self.upload)
+        self.upload_message = MyMessageBox("还没保存任何数据或存在未查看数据，确定上传？", self.upload)
         self.upload_status_message = MySimpleMessageBox("还没保存任何数据，确定上传？")
 
         self.login_win = LoginWindow(self)
@@ -174,13 +174,9 @@ class MainWindow(QMainWindow):
             self.next()
 
     def next(self):
-        self.face_idx += 1
-        if self.face_idx < len(self.attr_list):
+        if self.face_idx < len(self.attr_list) - 1:
+            self.face_idx += 1
             self.run()
-            return
-        else:
-            self.face_idx = 0
-        self.run()
 
     def _save_keypoints(self,):
         anno = join("{}/{}_{:02d}.pts".format(self.save_dir, basename(self.file).rsplit(".")[0], self.face_idx))
@@ -283,10 +279,8 @@ class MainWindow(QMainWindow):
         self.face_idx -= 1
         if self.face_idx >= 0:
             self.run()
-            return
         else:
             self.face_idx = 0
-        self.run()
 
     def set_out_dir(self, dir):
         from os import makedirs, path

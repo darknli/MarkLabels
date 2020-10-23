@@ -26,6 +26,9 @@ def read_anno(file):
             new_landmark.append(x)
             new_landmark.append(y)
         j["landmark"] = new_landmark
+        if "attributes" not in j:
+            j["attributes"] = {}
+            continue
         attr = j["attributes"]
         gender = attr["gender"]["value"]
         if gender == "Male":

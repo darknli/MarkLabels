@@ -14,6 +14,16 @@ PADDING = 100
 
 LEFT_POINT = QPoint(0, 0)
 
+class FloatPoints:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def multi(self, s):
+        self.x *= s
+        self.y *= s
+
+
 class ImageController(QLabel):
     def __init__(self, image_path, parent):
         super().__init__(parent)
@@ -23,7 +33,7 @@ class ImageController(QLabel):
         self.point = LEFT_POINT
         self.left_point = LEFT_POINT
         self.right_point = QPoint(self.img.width(), self.img.height())
-        self.global_shift = LEFT_POINT
+        self.global_shift = FloatPoints(LEFT_POINT.x(), LEFT_POINT.y())
         self.ratio = 1.0
         self.kp_move = None
         self.brightness_v = 0
@@ -51,13 +61,15 @@ class ImageController(QLabel):
     def mouseMoveEvent(self, e):  # 重写移动事件
         if self.left_click:
             move_distance = e.pos() - self._startPos
-            move_distance += self.global_shift * self.ratio
+            # move_distance += self.global_shift * self.ratio
+            move_distance += QPoint(self.global_shift.x * self.ratio, self.global_shift.y * self.ratio)
             delta_x, delta_y = move_distance.x(), move_distance.y()
             delta_x = min(max(delta_x, self.width() - self.img.width()*self.ratio - PADDING), PADDING)
             delta_y = min(max(delta_y, self.height() - self.img.height()*self.ratio - PADDING), PADDING)
             move_distance.setX(delta_x)
             move_distance.setY(delta_y)
-            self.global_shift = move_distance / self.ratio
+            # self.global_shift = move_distance / self.ratio
+            self.global_shift = FloatPoints(move_distance.x() / self.ratio, move_distance.y() / self.ratio)
             self.point = LEFT_POINT + move_distance
             self.right_point = self.right_point + move_distance
             self._startPos = e.pos()
@@ -83,11 +95,13 @@ class ImageController(QLabel):
             self.ratio = max(self.ratio - 1, MIN_SCALE)
         self.scaled_img = self._filter()
         self.point = cpoint - (cpoint - self.point) * self.ratio / last_ratio
-        self.global_shift = self.point / self.ratio
+        # self.global_shift = self.point / self.ratio
+        self.global_shift = FloatPoints(self.point.x() / self.ratio, self.point.y() / self.ratio)
         delta_x = min(max(self.point.x(), self.width() - self.img.width() * self.ratio), 0)
         delta_y = min(max(self.point.y(), self.height() - self.img.height() * self.ratio), 0)
         self.point = QPoint(delta_x, delta_y)
-        self.global_shift = self.point / self.ratio
+        # self.global_shift = self.point / self.ratio
+        self.global_shift = FloatPoints(self.point.x() / self.ratio, self.point.y() / self.ratio)
         self.right_point = QPoint(self.scaled_img.height(), self.scaled_img.width()) + self.point
         if self.kp_move is not None:
             self.kp_move(self.ratio, self.global_shift)
@@ -126,7 +140,8 @@ class ImageController(QLabel):
         """
         旋转之后，将上一个角度的平移量清零。
         """
-        self.global_shift = QPoint()
+        # self.global_shift = QPoint()
+        self.global_shift = FloatPoints(0, 0)
         self.point = QPoint()
         self.angle_v = (self.angle_v + 90) % 360
         self.scaled_img = self._filter()

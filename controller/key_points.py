@@ -5,6 +5,8 @@ from PyQt5.QtGui import QPalette, QFont
 from functools import partial
 from controller.page_table import BulkIndexTabelWidget
 from controller.utils import Rotator
+from math import ceil
+from controller.picture import FloatPoints
 
 visiable_color = Qt.green
 disvisiable_color = Qt.blue
@@ -34,7 +36,7 @@ class Keypoint(QLabel):
         self.parent = parent
         self.move(int(self.precision_x + 0.5), int(self.precision_y + 0.5))
         self.scale = 1
-        self.shift = QPoint(0, 0)
+        self.shift = FloatPoints(0, 0)
         self.label = QLabel(str(idx_points), parent)
         self.label.setStyleSheet('color:rgb(255, 120, 255)')
         self.label.move(self.geometry().x(), self.geometry().y())
@@ -86,8 +88,8 @@ class Keypoint(QLabel):
             loc = (loc[0].x(), loc[0].y())
         x, y = loc
 
-        fact_x = x / self.scale - self.shift.x()
-        fact_y = y / self.scale - self.shift.y()
+        fact_x = x / self.scale - self.shift.x
+        fact_y = y / self.scale - self.shift.y
         self.precision_x, self.precision_y = self.rotator.recover_location(fact_x, fact_y)
         self.move(int(x + 0.5), int(y + 0.5))
         self.label.move(int(x + 0.5), int(y + 0.5))
@@ -148,8 +150,8 @@ class Keypoint(QLabel):
         fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
         # fact_x = round(scale * (fact_x + shift.x()))
         # fact_y = round(scale * (fact_y + shift.y()))
-        fact_x = round(scale * fact_x) + round(scale * shift.x())
-        fact_y = round(scale * fact_y) + round(scale * shift.y())
+        fact_x = round(scale * fact_x) + ceil(scale * shift.x)
+        fact_y = round(scale * fact_y) + ceil(scale * shift.y)
         self.move(fact_x, fact_y)
         self.label.move(fact_x, fact_y)
 
@@ -159,8 +161,8 @@ class Keypoint(QLabel):
         fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
         # fact_x = round(self.scale * (fact_x + self.shift.x()))
         # fact_y = round(self.scale * (fact_y + self.shift.y()))
-        fact_x = round(self.scale * fact_x) + round(self.scale * self.shift.x())
-        fact_y = round(self.scale * fact_y) + round(self.scale * self.shift.y())
+        fact_x = round(self.scale * fact_x) + ceil(self.scale * self.shift.x)
+        fact_y = round(self.scale * fact_y) + ceil(self.scale * self.shift.y)
         self.move(fact_x, fact_y)
         self.label.move(fact_x, fact_y)
 
@@ -169,7 +171,7 @@ class Keypoint(QLabel):
         当图像有旋转的时候调用这个函数，设置使当前点跟图像同步+90°，并将上一次的平移量清零。
         """
         self.rotator.rotation()
-        self.shift = QPoint()
+        self.shift = FloatPoints(0, 0)
         fact_x, fact_y = self.rotator.cal_rotate_location(self.precision_x, self.precision_y)
         fact_x = round(self.scale * fact_x)
         fact_y = round(self.scale * fact_y)
