@@ -19,7 +19,9 @@ class LoginWindow(QWidget):
         flag = self.check_login()
         if flag:
             print("登录成功")
+            self.main_win.setup_ui()
             self.main_win.show()
+            self.main_win.run()
             self.close()
             return
         self.title_label = QLabel("登录", self)
@@ -65,7 +67,9 @@ class LoginWindow(QWidget):
         if self.check_login(user_name, user_password):
             QMessageBox.information(self, "登录消息", "登陆成功!")
             self.save_user_info(user_name, user_password)
+            self.main_win.setup_ui()
             self.main_win.show()
+            self.main_win.run()
             self.close()
         else:
             QMessageBox.information(self, "登录消息", "登录失败，用户名或密码错误!")

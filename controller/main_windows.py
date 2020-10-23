@@ -40,6 +40,10 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence(self.tr("b")), self, self.before)
         QShortcut(QKeySequence(self.tr("n")), self, self.next)
 
+        self.login_win = LoginWindow(self)
+
+    def setup_ui(self):
+
         self.manager = DataManager()
 
         self.sub_window = QWidget(self)
@@ -111,8 +115,6 @@ class MainWindow(QMainWindow):
         self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
         self.upload_message = MyMessageBox("还没保存任何数据或存在未查看数据，确定上传？", self.upload)
         self.upload_status_message = MySimpleMessageBox("还没保存任何数据，确定上传？")
-
-        self.login_win = LoginWindow(self)
 
         self.can_check = True
         self.face_idx = 0
