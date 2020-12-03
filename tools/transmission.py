@@ -139,7 +139,7 @@ def post_one(url, post_data, files=None):
 
 def test_request():
     post_data = {
-        "user_name": "yangjianli"
+        "user_name": "lixuesong"
     }
     return post_one(REQUEST_URL, post_data)
 
@@ -156,4 +156,4 @@ def test_upload():
     print(r)
 
 if __name__ == "__main__":
-    print(test_upload())
+    print(test_request())

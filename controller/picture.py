@@ -64,8 +64,8 @@ class ImageController(QLabel):
             # move_distance += self.global_shift * self.ratio
             move_distance += QPoint(self.global_shift.x * self.ratio, self.global_shift.y * self.ratio)
             delta_x, delta_y = move_distance.x(), move_distance.y()
-            delta_x = min(max(delta_x, self.width() - self.img.width()*self.ratio - PADDING), PADDING)
-            delta_y = min(max(delta_y, self.height() - self.img.height()*self.ratio - PADDING), PADDING)
+            delta_x = min(max(delta_x, self.width() - self.scaled_img.width() - PADDING), PADDING)
+            delta_y = min(max(delta_y, self.height() - self.scaled_img.height() - PADDING), PADDING)
             move_distance.setX(delta_x)
             move_distance.setY(delta_y)
             # self.global_shift = move_distance / self.ratio
@@ -97,8 +97,8 @@ class ImageController(QLabel):
         self.point = cpoint - (cpoint - self.point) * self.ratio / last_ratio
         # self.global_shift = self.point / self.ratio
         self.global_shift = FloatPoints(self.point.x() / self.ratio, self.point.y() / self.ratio)
-        delta_x = min(max(self.point.x(), self.width() - self.img.width() * self.ratio), 0)
-        delta_y = min(max(self.point.y(), self.height() - self.img.height() * self.ratio), 0)
+        delta_x = min(max(self.point.x(), self.width() - self.scaled_img.width()), 0)
+        delta_y = min(max(self.point.y(), self.height() - self.scaled_img.height()), 0)
         self.point = QPoint(delta_x, delta_y)
         # self.global_shift = self.point / self.ratio
         self.global_shift = FloatPoints(self.point.x() / self.ratio, self.point.y() / self.ratio)

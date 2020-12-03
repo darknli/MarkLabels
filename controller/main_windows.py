@@ -137,11 +137,18 @@ class MainWindow(QMainWindow):
                 landmark = single_face["landmark"]
                 self.landmark_list.append(np.array(landmark, dtype=float).reshape(-1, 2))
                 self.attr_list.append(single_face["attributes"])
+
+            # 读取固定数据打开此注释
+            # landmark, vc = self._load_had_anno(self.file)
+            # self.landmark_list.append(landmark)
+            # self.attr_list.append({})
+
             if hasattr(self, "image_label") and self.image_label is not None:
                 self._delete_controller(self.image_label)
                 self._delete_controller(self.face_label)
                 self._delete_controller(self.kp_cluster)
                 self._delete_controller(self.kp_cluster)
+                self.sub_window.repaint()
         self.image_label = ImageController(self.file, self.sub_window)
         self.image_label.show()
         self.image_label.move(0, 0)
@@ -155,6 +162,9 @@ class MainWindow(QMainWindow):
 
         w, h = self.image_label.image_size()
         self.kp_cluster = KeypointsCluster(self.landmark_list[self.face_idx], self.image_label, w, h)
+
+        # 单设置是否可见，需要上面注释的代码
+        # self.kp_cluster.set_vc(vc)
         self.image_label.bind_keypoints_move(self.kp_cluster.scale_loc)
         self.image_label.bind_show(self.update_message_status)
 
@@ -299,8 +309,20 @@ class MainWindow(QMainWindow):
     def _delete_controller(self, controller):
         if isinstance(controller, QWidget):
             sip.delete(controller)
+            controller = None
         else:
             for sub_con in dir(controller):
                 if isinstance(sub_con, QWidget):
                     sip.delete(sub_con)
+                    sub_con = None
             del controller
+
+    def _load_had_anno(self, file):
+        filename = basename(file).split(".")[0]
+        anno_list = glob("annotation/{}*.pts".format(filename))
+
+        with open(anno_list[0]) as f:
+            lines = f.readlines()
+        pts = np.array(lines[2].split(" ")).reshape(-1, 4)
+        return pts[:, :2].astype(np.float32), pts[:, 2:].astype(int)
+

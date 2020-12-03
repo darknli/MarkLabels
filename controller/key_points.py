@@ -188,6 +188,17 @@ class KeypointsCluster:
             kp.show()
         self.highlight_idx_point = None
 
+    def set_vc(self, vc):
+        palette = QPalette()  # 创建调色板类实例
+        for pt, (v, c) in zip(self.pts, vc):
+            if v:
+                palette.setColor(QPalette.Window, visiable_color)
+            else:
+                palette.setColor(QPalette.Window, disvisiable_color)
+            pt.visible = bool(v)
+            pt.convinced = bool(c)
+            pt.setPalette(palette)
+
     def set_high_light_point(self, idx_points):
         self.highlight_idx_point = idx_points
         for i, pt in enumerate(self.pts):
