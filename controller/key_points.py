@@ -20,7 +20,7 @@ class Keypoint(QLabel):
         self.precision_x = loc[0]
         self.precision_y = loc[1]
         self.iniDragCor = [0, 0]
-        self.resize(5, 5)
+        self.resize(6, 6)
         self.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
         if visible:

@@ -15,7 +15,8 @@ ANNOTATION_DIRECTORY = "annotation"
 class Downloader:
     def __init__(self, name):
         self.post_data = {
-            "user_name": name
+            "user_name": name,
+            "batch_name": "default"
         }
 
     def run(self):
@@ -149,9 +150,9 @@ def test_upload():
     post_data = {
         "user_name": "lixuesong",
         "img_url": img_url,
-        "face_num": 100
+        "face_num": 1
     }
-    files = {'face_point': open("/Users/darkn/code/work/MarkLabels/tools/transmission.py", "rb")}
+    files = {'face_point': open("aaaa", "rb")}
     r = post_one(UPLOAD_URL, post_data, files=files)
     print(r)
 
