@@ -265,6 +265,7 @@ class MainWindow(QMainWindow):
         x2 = min(x2 + expand_w, image.shape[1])
         y2 = min(y2 + expand_h, image.shape[0])
         image = image[y1:y2, x1: x2, :]
+        cv2.namedWindow("check", cv2.WINDOW_NORMAL)
         cv2.imshow("check", image)
         cv2.waitKey()
 
