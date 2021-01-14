@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QDesktopWidget, QShortcut,
-    QWidget, QPushButton, QFrame, QMessageBox
+    QWidget, QPushButton, QFrame, QApplication
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QKeySequence, QPalette, QFont
@@ -35,7 +35,6 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.setWindowTitle("关键点标注工具")
         self.setWindowIcon(QIcon("pic/title.png"))
-        self.resize(1280, 720)
         move2center(self)
         QShortcut(QKeySequence(self.tr("b")), self, self.before)
         QShortcut(QKeySequence(self.tr("n")), self, self.next)
@@ -43,11 +42,19 @@ class MainWindow(QMainWindow):
         self.login_win = LoginWindow(self)
 
     def setup_ui(self):
+        desktop = QApplication.desktop()
+
+        # 获取显示器分辨率大小
+        screenRect = desktop.screenGeometry()
+        self.height = screenRect.height()
+        self.width = screenRect.width()
+        self.resize(self.width, self.height)
 
         self.manager = DataManager()
 
+        expand_width = self.width - 638
         self.sub_window = QWidget(self)
-        self.sub_window.resize(640, 640)
+        self.sub_window.resize(expand_width, 700)
         self.sub_window.setWindowFlags(Qt.FramelessWindowHint)
         self.sub_window.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
@@ -61,17 +68,20 @@ class MainWindow(QMainWindow):
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         self.save_btn.setFont(font)
         self.save_btn.resize(50, 30)
+        expand_width += self.save_btn.width()
         self.save_btn.move(650, 0)
         self.save_btn.clicked.connect(self._clicked_save_btn)
 
         self.show_number = QPushButton("显示编号", self)
         self.show_number.setFont(font)
         self.show_number.resize(70, 30)
+        expand_width += self.show_number.width()
         self.show_number.move(700, 0)
         self.show_number.clicked.connect(self._clicked_show_btn)
 
         self.adjust_bright_slide = MySlide(self)
         self.adjust_bright_slide.resize(100, 30)
+        expand_width += self.adjust_bright_slide.width()
         self.adjust_bright_slide.move(760, 0)
         self.adjust_bright_slide.bound_brightness(self._adjust_brightness)
 
@@ -81,18 +91,21 @@ class MainWindow(QMainWindow):
                                   "QPushButton:pressed{border-image: url(pic/rotate.png)}")
 
         self.rotate_button.resize(20, 20)
+        expand_width += self.rotate_button.width()
         self.rotate_button.move(860, 5)
         self.rotate_button.clicked.connect(self._clicked_rotate_btn)
 
         self.view_button = QPushButton("查看全貌", self)
         self.view_button.setFont(font)
         self.view_button.resize(65, 30)
+        expand_width += self.view_button.width()
         self.view_button.move(885, 0)
         self.view_button.clicked.connect(self._clicked_view_btn)
 
         self.before_button = QPushButton("上一个", self)
         self.before_button.setFont(font)
         self.before_button.resize(55, 30)
+        expand_width += self.before_button.width()
         self.before_button.move(950, 0)
         self.before_button.clicked.connect(self.check_before)
         self.before_button.show()
@@ -100,6 +113,7 @@ class MainWindow(QMainWindow):
         self.next_button = QPushButton("下一个", self)
         self.next_button.setFont(font)
         self.next_button.resize(55, 30)
+        expand_width += self.next_button.width()
         self.next_button.move(1000, 0)
         self.next_button.clicked.connect(self.check_next)
         self.next_button.show()
@@ -107,6 +121,7 @@ class MainWindow(QMainWindow):
         self.upload_button = QPushButton("上传", self)
         self.upload_button.setFont(font)
         self.upload_button.resize(55, 30)
+        expand_width += self.upload_button.width()
         self.upload_button.move(1050, 0)
         self.upload_button.clicked.connect(self.check_upload)
         self.upload_button.show()
