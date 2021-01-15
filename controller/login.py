@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QLineEdit, QPushButton, \
     QLabel, QWidget, QApplication, QMessageBox
+from PyQt5.QtCore import Qt
 import os
 from tools.transmission import Downloader
 
@@ -47,11 +48,13 @@ class LoginWindow(QWidget):
 
     def check_login(self, user_name=None, password=None):
         if user_name is None:
-            if os.path.exists(CACHE_DIR):
-                with open(os.path.join(CACHE_DIR, "user_info.txt")) as f:
+            file = os.path.join(CACHE_DIR, "user_info.txt")
+            if os.path.exists(CACHE_DIR) and os.path.exists(file):
+                with open(file) as f:
                     lines = f.readlines()
                     user_name = lines[0].strip()
-                    password = lines[1].strip()
+                    if len(lines) > 1:
+                        password = lines[1].strip()
             else:
                 return False
         d = Downloader(user_name)
@@ -83,6 +86,10 @@ class LoginWindow(QWidget):
         with open(os.path.join(CACHE_DIR, "user_info.txt"), "w") as f:
             f.write("{}\n{}".format(user_name, user_password))
 
+    def keyPressEvent(self, event):
+        # 如果按下xxx则xxx
+        if event.key() == Qt.Key_Return:
+            self._login_btn_clicked()
 
 if __name__ == '__main__':
     app = QApplication([])

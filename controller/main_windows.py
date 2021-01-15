@@ -13,7 +13,7 @@ from controller.slider import MySlide
 from controller.message_box import MyMessageBox, MySimpleMessageBox
 from tools.megvii import read_anno
 import cv2
-from controller.login import LoginWindow
+from controller.login import LoginWindow, CACHE_DIR
 from tools.transmission import DataManager
 import sip
 from glob import glob
@@ -130,6 +130,14 @@ class MainWindow(QMainWindow):
         expand_width += self.upload_button.width()
         self.upload_button.clicked.connect(self.check_upload)
         self.upload_button.show()
+
+        self.logout_button = QPushButton("注销并退出", self)
+        self.logout_button.setFont(font)
+        self.logout_button.resize(80, 30)
+        self.logout_button.move(expand_width, 0)
+        expand_width += self.logout_button.width()
+        self.logout_button.clicked.connect(self._logout)
+        self.logout_button.show()
 
         self.next_message = MyMessageBox("还没保存，确定下一个？", self.next)
         self.before_message = MyMessageBox("还没保存，确定上一个？", self.before)
@@ -347,3 +355,8 @@ class MainWindow(QMainWindow):
         pts = np.array(lines[2].split(" ")).reshape(-1, 4)
         return pts[:, :2].astype(np.float32), pts[:, 2:].astype(int)
 
+    def _logout(self):
+        print("注销")
+        from os import remove
+        remove(join(CACHE_DIR, "user_info.txt"))
+        self.close()
