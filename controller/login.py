@@ -29,6 +29,7 @@ class LoginWindow(QWidget):
         self.password_label = QLabel("密码", self)
         self.user_txt = QLineEdit(self)
         self.password_txt = QLineEdit(self)
+        self.password_txt.setEchoMode(QLineEdit.Password)
         self.login_btn = QPushButton("登录", self)
 
         self.resize(300, 200)
