@@ -265,12 +265,7 @@ class KeyPointTable:
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         rows = len(kp_cluster.pts)
-        desktop = QApplication.desktop()
-
-        # 获取显示器分辨率大小
-        screenRect = desktop.screenGeometry()
-        height = screenRect.height()
-        self.kp_tabel = BulkIndexTabelWidget(rows, 6, (height - 60) // 32, parent)
+        self.kp_tabel = BulkIndexTabelWidget(rows, 6, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "确定", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)

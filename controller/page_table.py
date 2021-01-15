@@ -7,8 +7,10 @@ from platform import platform
 
 if 'Windows' in platform():
     item_span = 40
+    item_height = 32
 else:
     item_span = 37
+    item_height = 36
 
 class TableWidget(QWidget):
     """
@@ -168,10 +170,14 @@ class BulkIndexTabelWidget(QWidget):
     """
     带分页button的table
     """
-    def __init__(self, rows, cols, limit_num_page, parent):
+    def __init__(self, rows, cols, parent):
         super(BulkIndexTabelWidget, self).__init__(parent)
         self.rows, self.cols = rows, cols
-        self.limit_num_page = limit_num_page
+
+        desktop = QApplication.desktop()
+        screenRect = desktop.screenGeometry()
+        height = screenRect.height()
+        self.limit_num_page = (height - 60) // item_height
         self.num_pages = ceil(self.rows / self.limit_num_page)
 
         self.backstage_value = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
@@ -239,11 +245,11 @@ class BulkIndexTabelWidget(QWidget):
             table.verticalHeader().hide()
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.move(5, 30)
-            table.resize(item_span * self.cols, self.limit_num_page*32)
+            table.resize(item_span * self.cols, self.limit_num_page*item_height)
             for i in range(table.columnCount()):
                 table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
             self.table_list.append(table)
-        self.resize(max(item_span * self.cols+5, 60 * self.num_pages), self.limit_num_page*32+30)
+        self.resize(max(item_span * self.cols+5, 60 * self.num_pages), self.limit_num_page*item_height+30)
         self.setPageController()
 
     def reload_table(self, page_idx):

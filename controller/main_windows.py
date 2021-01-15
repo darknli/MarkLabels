@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
         self.kp_tabel.move(self.image_label.width()+1, 25)
 
         self.face_label = Labels(self)
-        self.face_label.move(self.image_label.width() + self.kp_tabel.kp_tabel.width() + 2, 45)
+        self.face_label.move(self.image_label.width() + self.kp_tabel.kp_tabel.table_list[0].width() + 6, 45)
         for name, value in self.attr_list[self.face_idx].items():
             self.face_label.set_label(name, value)
 
