@@ -110,7 +110,7 @@ class Labels:
 
         self.age = Selector("年龄", AGE.copy(), self.panel)
         self.age.move(300, 20)
-        self.age.resize(60, 600)
+        self.age.resize(70, 600)
         self.panel.show()
 
         font = QFont()

@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QLabel, QPushButton, \
-    QTableWidgetItem
+    QTableWidgetItem, QApplication
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPalette, QFont
 from functools import partial
@@ -265,7 +265,12 @@ class KeyPointTable:
         font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
         font.setPointSize(10)  # 括号里的数字可以设置成自己想要的字体大小
         rows = len(kp_cluster.pts)
-        self.kp_tabel = BulkIndexTabelWidget(rows, 6, 19, parent)
+        desktop = QApplication.desktop()
+
+        # 获取显示器分辨率大小
+        screenRect = desktop.screenGeometry()
+        height = screenRect.height()
+        self.kp_tabel = BulkIndexTabelWidget(rows, 6, (height - 60) // 32, parent)
         self.kp_tabel.setHorizontalHeaderLabels(["序号", "X", "Y", "可见", "确定", "改变"])
         self.kp_cluster = kp_cluster
         self.kp_cluster.bind_point_move_controller(self)
@@ -296,7 +301,7 @@ class KeyPointTable:
         self.kp_tabel.setFont(font)
         self.kp_tabel.cellChangedconnect(self.cell_change)
         self.kp_tabel.cellClickedconnect(self.click_cell)
-        self.kp_tabel.resize(400, 650)
+        # self.kp_tabel.resize(400, 700)
         self.kp_tabel.show()
 
     def click_cell(self, row, col):

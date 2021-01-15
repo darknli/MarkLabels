@@ -3,6 +3,12 @@ from PyQt5.QtWidgets import QLabel, QTableWidget, QPushButton, QWidget, QVBoxLay
 from PyQt5.QtCore import Qt
 from math import ceil
 from functools import partial
+from platform import platform
+
+if 'Windows' in platform():
+    item_span = 40
+else:
+    item_span = 37
 
 class TableWidget(QWidget):
     """
@@ -233,11 +239,11 @@ class BulkIndexTabelWidget(QWidget):
             table.verticalHeader().hide()
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
             table.move(5, 30)
-            table.resize(37 * self.cols, 600)
+            table.resize(item_span * self.cols, self.limit_num_page*32)
             for i in range(table.columnCount()):
                 table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
             self.table_list.append(table)
-
+        self.resize(max(item_span * self.cols+5, 60 * self.num_pages), self.limit_num_page*32+30)
         self.setPageController()
 
     def reload_table(self, page_idx):

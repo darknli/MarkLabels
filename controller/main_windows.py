@@ -17,6 +17,7 @@ from controller.login import LoginWindow
 from tools.transmission import DataManager
 import sip
 from glob import glob
+from platform import platform
 
 def move2center(self):
     screen_size = QDesktopWidget().screenGeometry()
@@ -42,20 +43,23 @@ class MainWindow(QMainWindow):
         self.login_win = LoginWindow(self)
 
     def setup_ui(self):
-        desktop = QApplication.desktop()
 
+        # 因为windows底部菜单宽度，导致需要比mac版的高度要小10个像素左右
+        diff = 10 if "Windows" in platform() else 0
+
+        desktop = QApplication.desktop()
         # 获取显示器分辨率大小
         screenRect = desktop.screenGeometry()
         self.height = screenRect.height()
         self.width = screenRect.width()
-        self.resize(self.width, self.height-60)
+        self.resize(self.width, self.height-60 - diff)
         self.move(0, 0)
 
         self.manager = DataManager()
 
         expand_width = self.width - 638
         self.sub_window = QWidget(self)
-        self.sub_window.resize(expand_width, self.height-80)
+        self.sub_window.resize(expand_width, self.height-80 - diff)
         self.sub_window.setWindowFlags(Qt.FramelessWindowHint)
         self.sub_window.setAutoFillBackground(True)
         palette = QPalette()  # 创建调色板类实例
@@ -188,7 +192,7 @@ class MainWindow(QMainWindow):
         self.kp_tabel.move(self.image_label.width()+1, 25)
 
         self.face_label = Labels(self)
-        self.face_label.move(self.image_label.width() + 230, 45)
+        self.face_label.move(self.image_label.width() + self.kp_tabel.kp_tabel.width() + 2, 45)
         for name, value in self.attr_list[self.face_idx].items():
             self.face_label.set_label(name, value)
 
